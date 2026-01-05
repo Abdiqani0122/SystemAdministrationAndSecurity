@@ -1,26 +1,65 @@
 \documentclass[a4paper, 10pt]{article}
+
+% Encoding and language
 \usepackage[utf8]{inputenc}
-\usepackage[includeheadfoot,margin=1in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{times}
 \usepackage[english]{babel}
+
+% Page layout
+\usepackage[includeheadfoot,margin=1in]{geometry}
+
+% Fonts
+\usepackage{newtxtext,newtxmath}
+
+% Spacing
+\usepackage{setspace}
+\onehalfspacing
+
+% Graphic & tables
 \usepackage{graphicx}
 \usepackage[export]{adjustbox}
 \usepackage{subcaption}
 \usepackage{wrapfig}
 \usepackage{array}
 \usepackage{multirow}
+
+% Headings
+\usepackage{titlesec}
+
+
+% TOC & headers
 \usepackage{tocloft}
 \usepackage{fancyhdr}
+
+% Links
 \usepackage{hyperref}
+
+% No page number on title page
 \usepackage{nopageno}
-\pagenumbering{arabic}
+
+% Paragraph style
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% Header/footer
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\includegraphics[width=1.5cm, height=1cm]{USNlogo}}
+\fancyhead[L]{\includegraphics[height=0.9cm]{Latex/USNlogo.png}}
 \fancyhead[R]{CS4220}
+\fancyfoot[C]{\thepage}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue
+}
+
 \cfoot{\thepage}
-\title{CS4220 -- System Administration and Security \\
+\title{
+\vspace{-1cm}
+\includegraphics[width=6cm]{USN_logo_rgb.png}\\[2em]
+CS4220 -- System Administration and Security \\
 Project Assignments -- Part I \\[2ex] 
 Your Topic \\[1ex]}  
 \author{
@@ -43,6 +82,10 @@ Your Topic \\[1ex]}
 \section{Introduction}
 An introduction to your topic. You briefly describe what your topic is about. 
 Normal Latex citation and bibliography should be used \cite{BasinCKPSS18}.
+
+
+
+\section{Metode}
 
 \section{Other sections and subsections}
 Add new sections (or subsections) as needed. You can describe challenges and open problems, solutions and future directions, etc. You can present some solutions to the security problems described in previous sections. You can find such solutions from recent literature that you have studied. You can also describe your proposed solutions if you have any. You may present future directions if you have identified any. 
