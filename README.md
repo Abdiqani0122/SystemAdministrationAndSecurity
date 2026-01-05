@@ -24,6 +24,9 @@ The proposal is based on a review of **recent peer-reviewed scientific literatur
 ---
 
 ## 📁 Repository Structure
+## 📁 Repository Structure
+
+```text
 .
 ├── main.tex                     # Main LaTeX file (project proposal)
 ├── Ref.bib                      # Bibliography (BibTeX references)
@@ -40,5 +43,6 @@ The proposal is based on a review of **recent peer-reviewed scientific literatur
 │
 └── output/
     └── proposal.pdf              # Compiled PDF (optional)
+
 
 
