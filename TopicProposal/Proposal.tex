@@ -1,0 +1,36 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+\usepackage{times}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{hyperref}
+
+\title{Proposed Title}
+% Replace "Proposed Title" with your topic title 
+\author{
+  Fullname1 \\
+  \texttt{email1}
+  \and
+  Fullname2 \\
+  \texttt{email2}
+}
+\date{Group XX \\ [3ex] 
+% Replace XX with your group number on Canvas
+Project proposal for CS4220 -- Spring 2026 \\ [1ex]
+%Department of Science and Industry Systems \\ [1ex]
+University of South-Eastern Norway \\  [3ex] 
+\today}
+
+\pagenumbering{gobble}
+
+\begin{document}
+
+\maketitle
+
+Describe what you want to do, and some relevant scholarly references including three recent scientific/refereed papers about the topic from last 3 years. Search on \url{scholar.google.com} and similar websites for Scholar articles. You can download bibliographic information in Bibtex from \url{dblp.org} and copy it to the \emph{Ref.bib} file. See below how an article should be cited \cite{AndroulakiBBCCC18, BasinCKPSS18}. It starts with the authors' names, paper title, and publication specifications including page numbers and year of publication. Journals have typically a volume number (vol.) and an issue number (no.). 
+
+\small
+\bibliographystyle{IEEEtran}
+\bibliography{Ref}
+
+\end{document}
