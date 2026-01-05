@@ -24,7 +24,6 @@ The proposal is based on a review of **recent peer-reviewed scientific literatur
 ---
 
 ## 📁 Repository Structure
-## 📁 Repository Structure
 
 ```text
 .
