@@ -17,7 +17,7 @@
 \pagenumbering{arabic}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\includegraphics[width=1.5cm, height=1cm]{USNlogo}}
+\fancyhead[L]{\includegraphics[width=1.5cm, height=1cm]{Project/Images/USNlogo.png}}
 \fancyhead[R]{CS4220}
 \cfoot{\thepage}
 \title{CS4220 -- System Administration and Security \\
@@ -46,7 +46,7 @@ With the increasing adoption of cloud architecture in modern software system, it
 The technology behind this is containerization, which enables applications
 to be packaged with their dependencies and executed consistently across environments.
 
-To orchestrate containerized workload at scale, Kubernetes has emerged as the standard platform, by providing powerful automation capabilities for deployment, scaling and management of containerized applications. That said, the same feature that make Kubernetes flexible and extensive also introduce security challenges. The systems distributes architecture, extensive API framework and declarative configurations make the system prone to misconfigurations, unauthorized privilege gain and unauthorized access.
+To orchestrate containerized workload at scale, Kubernetes has emerged as the standard platform, by providing powerful automation capabilities for deployment, scaling and management of containerized applications. That said, the same feature that make Kubernetes flexible and extensive also introduce security challenges. The systems distribute architecture, extensive API framework and declarative configurations make the system prone to misconfiguration, unauthorized privilege gains and unauthorized access.
 
 The security in Kubernetes relies heavily on correct configuration by administrators and developers and is not enabled by default. There have been real-world incidents that have demonstrated that insecure details, lax role-based access control(RABC) policies and unprotected control plane can allow attackers to compromise entire clusters. With this once the attackers gain access to the Kubernetes API or a privileged workload, they can deploy malicious containers, expand access through connected systems, or abuse cluster resources. 
 
@@ -63,15 +63,59 @@ This paper aims to:
     \item Present challenges and outline potential direction for future research to strengthen Kubernetes clusters.
 \end{itemize}
 
-\section{Other sections and subsections}
-Add new sections (or subsections) as needed. You can describe challenges and open problems, solutions and future directions, etc. You can present some solutions to the security problems described in previous sections. You can find such solutions from recent literature that you have studied. You can also describe your proposed solutions if you have any. You may present future directions if you have identified any. 
+\section{Background and Threat Model}
 
-\subsection{About references} 
-\begin{itemize}
-	\item You should have at least 3 scholar and peer-reviewed articles from well-reputed conferences and journals from last 3 years. 
-	\item Use a standard reference style as you can see in the references section. Simply download Bibtex info from \url{dblp.org} and add them to the Ref.bib file in the attachment so that your references are automatically added. You might alternatively take it from Google Scholar, but it is not as precise as DBLP: In Google Scholar: Go to ``Bibliography manager'' at \url{https://scholar.google.com/scholar_settings?} and select ``Show links to import citations into Bibtex'' and Save.
+This section presents the technical background on containerized systems and Kubernetes, and defines threat model used throughout the paper.
 
-\end{itemize}
+\subsection{Virtualization and containerization}
+
+Virtualization has long been used to improve resource utilization by runnung multiple virtual machines (VM) to run on a single host. The virtual machines each included their own guest operating system, which provided strong isolation between individual workloads, but at the cost of higher resource usage consumption and slower startup times. While it did improve the infrastructure flexibility, it does not support the scalability and rapid deployment that is required by modern cloud architecture.
+
+Containerization addressed these limitations by enabling application to execute within isolated user spaces while sharing the host operating system kernel. Container engines such as Docker use Linux built isolation and resource limiting mechanism so that containers behave like in separate environment with the same operating system kernel. Compared to the virtual machines, they are faster, more lightweight, consume less resources. However, sharing the host kernel model also introduces new security risk, such as misconfigurations and vulnerabilities that can be exploited by attackers to allow them to escape the container isolation and access the host resources. \cite{Moric2025KubernetesSecurity}
+
+\subsection{Container orchestration and Kubernetes}
+
+As the container application becomes more widely adopted, the need to manage a large number of containers across distributed environements led to the development of a platform to manage these containers. Kubernetes emerged as the dominant orchestration system, automating deployment, management, recovery and scaling of containerized application.
+
+Kubernetes operates using clusters that consist of a control plane and a set of worker nodes. The control plane consist of components such as API server, scheduler, control manager and the etcd key-value store that are critical to the management of the overall state of the clusters. Worker nodes run applications workloads in the form of pods, these pods group one or more containers together and share network and storage resources. Interactions with the clusters such as deploying application or changing the configuration file is done through the Kubernetes API.
+
+Even though Kubernetes makes application management easier and more efficient through flexibility and automation, it also expands the systems attack surface. It exposes a wide variety of functionality that, if not properly secured, can be exploited by attackers. Studies \cite{Cesarano2025KubeFence} show that many vulnerabilities and misconfigurations are caused by API features, making the Kubernetes API a target for attackers. Furthermore, because Kubernetes workloads are constantly changing, making consistent policies is difficult, as shown in real-world deployment \cite{Chen2025ShadowKube}.
+
+\subsection{Security Model of Kubernetes}
+
+Kubernetes several built--in security mechanism specifically for the API, such as authentication, authorization and admission control. Authentication confirms the identify of the user and services interacting with the cluster, while authorization is generally handled by role-based access control (RBAC). RBAC decides permission for Kubernetes resources such as pods, deployment, and specifies which actions the users and services can perform.
+
+However, RBAC only gives basic control of who can access resources, but does not limit how specific settings inside those resources can be used. This makes it possible for users with legitimate access to the resources to abuse advanced configurations to gain more privileges or exploit weaknesses. Security measures, such as network policies, pod security settings, and audit logging need to be manually set up and maintained by administrators. With these controls often applied inconsistently or turned off, it contributes significantly to Kubernetes security incidents \cite{Moric2025KubernetesSecurity}.
+
+
+\section{Security Challenges in Kubernetes}
+
+Despite it's wide adoption and powerful capabilities, Kubernetes introduces a number of security challenges which is a result of it's architectural design, configuration complexity and operational model.
+
+\subsection{Configuration Complexity and Misconfiguration}
+
+One of the biggest security challenges with Kubernetes is the complexity of it's configuration models. Kubernetes depends on declarative configuration files, which are files where you tell the system what you want it to look like, rather than what to do. While this enables automation and scalability, it also makes mistakes more likely. To prevent security issues, administrators have to correctly configure parameters authentication, networking, storage and workload isolation.
+
+In real-deployments, misconfigurations such as giving to many permisive RBAC roles, unsecured API endpoints, privileged containers, or setting up service accounts incorrectly are common. These misconfigurations can give users or workloads more access, allowing attackers to take control. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
+
+\subsection{Control plane Exposure and API Abuse}
+
+For attackers the Kubernetes control plane is a high-value target due to it's central role in managing clusters and workload scheduling. Since all clusters are managed through the Kubernetes API, it exposes extensive functionality for creating, modifying and deleting resources. 
+
+
+
+\section{Existing Security Approaches}
+
+
+\section{Comparative analysis}
+
+
+\section{Future Research Direction}
+
+
+\section{Conclusion}
+
+
 
 \vspace{-12pt}
 
