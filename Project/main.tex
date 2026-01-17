@@ -96,11 +96,11 @@ Despite it's wide adoption and powerful capabilities, Kubernetes introduces a nu
 
 One of the biggest security challenges with Kubernetes is the complexity of it's configuration models. Kubernetes depends on declarative configuration files, which are files where you tell the system what you want it to look like, rather than what to do. While this enables automation and scalability, it also makes mistakes more likely. To prevent security issues, administrators have to correctly configure parameters authentication, networking, storage and workload isolation.
 
-In real-deployments, misconfigurations such as giving to many permisive RBAC roles, unsecured API endpoints, privileged containers, or setting up service accounts incorrectly are common. These misconfigurations can grant users or workloads more access, enabling attackers to take control. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
+In real-deployments, misconfigurations such as giving to many permisive RBAC roles, unsecured API endpoints, privileged containers, or setting up service accounts incorrectly are common. These misconfigurations can grant users or workloads excessive access, allowing attackers to gain control. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
 
 \subsection{Kubernetes Control Plan and API Attack Surface}
 
-For attackers the Kubernetes control plane is a high-value target due to it's central role in managing clusters and workload scheduling. Since all clusters are managed through the Kubernetes API, it exposes extensive functionality for creating, modifying and deleting resources. If the API access control are not probably restricted, it may give access to attackers to abuse legitimate API calls to control workloads or manipulate cluster configuration.
+For attackers the Kubernetes control plane is a high-value target due to it's central role in managing clusters and workload scheduling. The Kubernetes API manages all clusters and allows creating, modiyfing and deleting resources. If the API access control are not probably restricted, it may give access to attackers to abuse legitimate API calls to control workloads or manipulate cluster configuration.
 
 Despite the fact that Kubernetes uses authentication and authorization mechanism, the API is still a critical attack surface. In some situations authenticated users with limited privileges can still misuse advanced configuration to cause it to behave unintended. A significant amount of vulnerabilities and misconfigurations are exercised through API specific features rather than the entire resources, this makes it difficult to control API access using the traditional access control methodd. Because the traditional access controls are broad it's hard to allow access and block others at a detailed level \cite{Cesarano2025KubeFence}.
 
@@ -117,7 +117,15 @@ At a scale, managing these RBAC policies introduces operational challenges. To b
 
 
 
-\section{Existing Security Approaches}
+\section{Security Hardening and Defense Strategies}
+
+The security challenges described earlier have led to many strategies designed to improve security of containerized and Kubernetes environment. With recent studies demonstrating that relying on a single security mechanism is insufficient and requires the combination of preventive hardening, runtime and attack surface reduction. In this section we will review the security apporaches focused on the control plane and workload hardening, behavioral monitoring and detailed API access control.
+
+\subsection{Control Plane and Workload Hardening}
+
+
+
+
 
 
 \section{Comparative analysis}
