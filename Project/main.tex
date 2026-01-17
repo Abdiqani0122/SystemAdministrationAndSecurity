@@ -88,19 +88,32 @@ Kubernetes several built--in security mechanism specifically for the API, such a
 However, RBAC only gives basic control of who can access resources, but does not limit how specific settings inside those resources can be used. This makes it possible for users with legitimate access to the resources to abuse advanced configurations to gain more privileges or exploit weaknesses. Security measures, such as network policies, pod security settings, and audit logging need to be manually set up and maintained by administrators. With these controls often applied inconsistently or turned off, it contributes significantly to Kubernetes security incidents \cite{Moric2025KubernetesSecurity}.
 
 
-\section{Security Challenges in Kubernetes}
+\section{Security Challenges in Containerized and Kubernetes Environment}
 
 Despite it's wide adoption and powerful capabilities, Kubernetes introduces a number of security challenges which is a result of it's architectural design, configuration complexity and operational model.
 
-\subsection{Configuration Complexity and Misconfiguration}
+\subsection{Container and Configuration Challenges}
 
 One of the biggest security challenges with Kubernetes is the complexity of it's configuration models. Kubernetes depends on declarative configuration files, which are files where you tell the system what you want it to look like, rather than what to do. While this enables automation and scalability, it also makes mistakes more likely. To prevent security issues, administrators have to correctly configure parameters authentication, networking, storage and workload isolation.
 
-In real-deployments, misconfigurations such as giving to many permisive RBAC roles, unsecured API endpoints, privileged containers, or setting up service accounts incorrectly are common. These misconfigurations can give users or workloads more access, allowing attackers to take control. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
+In real-deployments, misconfigurations such as giving to many permisive RBAC roles, unsecured API endpoints, privileged containers, or setting up service accounts incorrectly are common. These misconfigurations can grant users or workloads more access, enabling attackers to take control. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
 
-\subsection{Control plane Exposure and API Abuse}
+\subsection{Kubernetes Control Plan and API Attack Surface}
 
-For attackers the Kubernetes control plane is a high-value target due to it's central role in managing clusters and workload scheduling. Since all clusters are managed through the Kubernetes API, it exposes extensive functionality for creating, modifying and deleting resources. 
+For attackers the Kubernetes control plane is a high-value target due to it's central role in managing clusters and workload scheduling. Since all clusters are managed through the Kubernetes API, it exposes extensive functionality for creating, modifying and deleting resources. If the API access control are not probably restricted, it may give access to attackers to abuse legitimate API calls to control workloads or manipulate cluster configuration.
+
+Despite the fact that Kubernetes uses authentication and authorization mechanism, the API is still a critical attack surface. In some situations authenticated users with limited privileges can still misuse advanced configuration to cause it to behave unintended. A significant amount of vulnerabilities and misconfigurations are exercised through API specific features rather than the entire resources, this makes it difficult to control API access using the traditional access control methodd. Because the traditional access controls are broad it's hard to allow access and block others at a detailed level \cite{Cesarano2025KubeFence}.
+
+
+\subsection{Limitations of Role-Based Access Control and Static Access Control}
+
+The primary authorization mechanism used in Kubernetes to regulate access to cluster resources is role-based access control. The RBAC policies specify witch users or services that can perform actions on the Kubernetes resources such as pods, deployment or services. While the role-based access control provides a clear and standarized approach to access control, it has limitations in managing access in complex and rapidly changing Kubernetes environement.
+
+A key limitation of RBAC is that it grants broad permission, without fine control over evert possible action. RBAC policies decides what kind of resources (pods, deployment or service) a user can access and what actions they can perform on them like (create, delete and modify). But it does not control the small details inside the resources such as the specific configuration option a user can choose. This means users with permission to create or modify resources can can misuse advanced configuration option to gain privileges or bypass isolation
+
+RBAC is also a static access control, meaning it does not adjust to change in how workload behave or run. Since Kubernetes environement is dynamic, workloads are being created, scaled and removed constantly and because RBAC is a fixed, the policies cannot respond to unusual activity or misuse of granted permission at runtime. This limits it effectiveness against compromised workloads trusted users who misuse their small permissions to cause problems.
+
+At a scale, managing these RBAC policies introduces operational challenges. To balance between security and usability when defining roles, administrators often grant people more access then they need to avoid slowing down development, which increases attack surface and weakens the clusters overall security. Recent studies \cite{Cesarano2025KubeFence} have highlighted the limitation with RBAC as a standalone defense mechanism, so additional approaches are need the provide finer control and while workloads are running.
 
 
 
