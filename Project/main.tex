@@ -166,11 +166,21 @@ The security approaches discussed in the previous sections addresses Kubernetes 
 
 \subsection{Comparison of Security Posture}
 
+Control plane and workload hardening, as presented in "Security Hardening and compliance assessment of Kubernetes control plane and workloads" \cite{Moric2025KubernetesSecurity}, primarily strengthens Kubernetes by reducing the risk of misconfigurations and insecure defaults. This approach prevents common configurations based attacks and lays the foundation for strong security. However, the problem is that it assumes that administrators have correctly applied and maintain hardening policies over time, since once the workload is deployed, static hardening provides limited protection against attack that exploit legitimate permissions or occur during runtime.
 
+Runtime monitoring approaches, such as the one proposed in "Shadowkub: Enhancing Kubernetes security with behavioral monitoring and honeypot integration" \cite{Chen2025ShadowKube}, strenghten security by detecting malicious behavior that bypass static defenses. Through a continuous monitoring of workload behavior and anomaly detection, runtime defenses can uncover compromised containers or unauthorized activity even when attackers operate within granted permission. The approach is effective against runtime threats and activities following compromise, however it does not prevent misconfiguration or reduce the exposed attack surface before deployment.
+
+API attack surface reduction, presented in "Kubefence: Security hardening of Kubernetes attack surface" \cite{Cesarano2025KubeFence}, enhances security by reducing what attackers can do from the start. By enforcing strict restrictions on API usage, this approach reduces attack paths and mitigates both misconfiguration and certain vulnerabilities. Its effectiveness depends on accurately understanding workload behavior to generate correct polices, offering stronger preventive protection than traditional RBAC.
+
+Together, these approaches strengthen the overall security: Hardening reduces misconfiguration risk, runtime monitoring detects ongoing attacks and lastly API filtering limits exploitable functionalities.
 
 \subsection{Operational and Security cost consideration}
 
+From an operational view, control plane and workload hardening have little impact on performance cost, as they rely mainly on preconfigured settings. However there will be operational burden placed on the administrators can be significant, since maintaining secure configurations across multiple evolving clusters requires continuous effort and expertise. 
 
+Building on this, runtime monitoring introduce complexity since they require continuous observation, data collection and analysis. Techniques such as behavioral monitoring and honeypot may increase system load and require fine-tuning to prevent false positives. The security benefits often outweigh the system load in this case, although for large or resource limited systems it becomes harder to manage.
+
+In combination with runtime monitoring and workload hardening, API attack surface reduction provides a layered security approach. 
 
 \subsection{Complementary and Defense}
 
@@ -194,12 +204,22 @@ The security approaches discussed in the previous sections addresses Kubernetes 
 \setcounter{section}{0}
 
 \section{System Description and Security Need}
+In this part of the thesis, which is a case study, we have chosen to focus on the Electronic Health Record (EHR) system designed for a regional hospital. This is a digital platform for collecting and storing patient health information across different treatment sites and clinical departments. The main purpose of such a system is to provide healthcare professionals with secure and rapid access to critical patient information, including medical records, lab results, X-rays and surgical reports. This helps increase patient safety and is more efficient when it comes to interaction between doctors, nurses and other support staff.\\
 
+The system consists of three main components, these are a client side, an application server and the database, which is built as a distributed architecture. The client side is the workstation in the hospital department, mobile devices used during visits, or protected portals for the benefit of patients. This can be either iPads or computers on trolleys. These are used by the doctor to check blood test results, show X-ray images to the patient or write new medication doses while they are with the patient. Since these devices are mobile, there is also a risk that they can be lost or stolen or that unauthorized persons see the screen. Therefore, there is a need for automatic locking and access filters. The application server is primarily responsible for handling logical operations and requests, while the database is responsible for securing the actual journal data and storing it in an encrypted format.\\
 
+For such a system as the hospital uses, it is important to protect it from threats by implementing security mechanisms related to CIA. They consist of information that is confidentiality, data security (integrity), and ensuring that the system is always usable during critical situations, and that important information is always available to healthcare personnel (availability). Confidentiality is always a major challenge for such a system because the system contains sensitive personal information, it attracts both hackers and creates challenges among personnel when it comes to internal snooping. Integrity is also a critical challenge here, because if information about allergies or medication dosage of a patient is changed by unauthorized persons, it can lead to a direct threat to the patient's life and health. When it comes to emergency situations, accessibility is crucial, especially during such situations where medical care is about getting quick access to the patient's record. The main challenge is to implement the necessary security measures without compromising usability, because if the system becomes too cumbersome, the risk also increases that employees will use unsafe detours to complete their jobs on time.
 
-\subsection{}
-
-
+\begin{figure}[h!]
+    \centering
+    % Her setter vi bredden til 100% og høyden til maks 8cm
+    \includegraphics[width=0.9\linewidth, height=8cm, keepaspectratio]{image.png}
+    \caption{System Architecture and Security Mechanisms}
+    \vspace{10pt} % Gir litt avstand mellom bildet og forklaringen
+    \small % Gjør forklaringsteksten litt mindre enn brødteksten for bedre layout
+    As illustrated in Figure \ref{fig:architecture}, the security is built as a layered defense. I have chosen to implement a \textbf{Secure Zone} (dashed area) to isolate the most critical system components from the open network. The diagram also demonstrates the \textbf{negative logic} of the system; for instance, if a user provides an incorrect password or MFA code, the request is terminated at the border of the secure zone. This acts as a barrier that prevents unauthorized traffic from reaching the application logic or database, effectively reducing the risk of attacks such as SQL injections or unauthorized access.
+    \label{fig:architecture}
+\end{figure}
 
 \section{Identity Management }
 
