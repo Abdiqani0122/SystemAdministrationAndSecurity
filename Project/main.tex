@@ -180,16 +180,26 @@ From an operational view, control plane and workload hardening have little impac
 
 Building on this, runtime monitoring introduce complexity since they require continuous observation, data collection and analysis. Techniques such as behavioral monitoring and honeypot may increase system load and require fine-tuning to prevent false positives. The security benefits often outweigh the system load in this case, although for large or resource limited systems it becomes harder to manage.
 
-In combination with runtime monitoring and workload hardening, API attack surface reduction provides a layered security approach. 
+In combination with runtime monitoring and workload hardening, API attack surface reduction provides a layered security approach. By limiting exposed API surface and applying least-privilege access, the potential damage from successful attacks is reduced. This meant that while runtime performance impact is low, the effectiveness of this approach depends on the accuracy of the policies as incorrect or misconfigured polices could disrupt workload or weaken the security.
 
 \subsection{Complementary and Defense}
 
+One important insight from this comparison is that no single approach addresses all Kubernetes security challenges. Each method addresses a distinct phase of the attack lifecycle and helps compensate for the weaknesses of the others. Control plane hardening is preventive, runtime monitoring focuses on detection and API filtering enforces restriction.
+
+These characteristics suggest a multi-layered security that combines several defenses is better than depending on just one. Strengthening the foundational baseline reduces misconfigurations, API filtering can limit damage caused by compromised credentials and runtime monitoring can detect attacks that slips past the preventive measures. This layered approach follows established security practices and reflects the complexity of real-world Kubernetes environment.
 
 
 \section{Future Research Direction}
 
+Despite significant advances in securing containerized and Kubernetes-based environment, there are still several challenges that remain. In This section we will discuss future direction aimed at improving the security posture of Kubernetes deployment.
+
+\subsection{Automated and Context-Aware Security Configurations}
+
+
 
 \section{Conclusion}
+
+
 
 \vspace{-12pt}
 
@@ -222,11 +232,38 @@ For such a system as the hospital uses, it is important to protect it from threa
 \end{figure}
 
 \section{Identity Management }
+In a modern healthcare system, identity management is the foundation of security. It is more than just a username or password. It is a framework for protecting the right people from accessing the necessary technological resources at the right time and for the right reasons. Confidentiality is critical in an environment like a hospital, so it is crucial to have effective identity management to prevent both external attacks and internal snooping.
+
+
+\subsection{Identity lifecycle}
+A user's identity in the system starts long before the actual login and the process consists of three phases (provisioning, maintenance, and deprovisioning).
+
+Provisioning: When a new doctor or nurse is hired at the regional hospital, their digital identity must be created based on verified data from the human resources (HR) system. A critical part of this process is to bind the identity to the authorization register for healthcare personnel. This means that only those who have been granted approved access also have access to the clinical modules in the EHR system.
+
+Maintenance: This phase is about access control related to the different roles (RBAC). That is, instead of assigning rights to an individual, the rights are assigned based on roles such as doctor, nurse, or administrative employee. The role determines whether a request to the database is approved as an authorized query, which is also shown in the architecture diagram (fig.1)
+
+Deprovisioning: When working hours are over, it is critical and necessary that access is immediately revoked. Automated deprovisioning prevents ghost accounts, i.e. inactive accounts that can be misused in a possible attack where the attacker can access sensitive data about patients undetected.
+
+\subsection{Authentication mechanisms and MFA} As I have illustrated in the diagram (fig.1), everyone must go through an ID Provider before they can access the application server. Authentication is the process of verifying that a person is actually who they claim to be. For hospital systems, multi-factor authentication (MFA) is required to achieve a sufficient level of trust. Two out of three factors are required for multi-factor authentication (MFA).
+
+\begin{itemize}
+    \item Number one is something that only you know, it's a password or pin code.
+    \item Something you always have with you or on you, such as a smart card, physical security key, or code if you use a mobile app that you have access to.
+    \item The last factor is something you are yourself, such as Biometrics (fingerprints) or facial recognition
+\end{itemize}
+
+The diagram we created (fig 1) where all incorrect attempts will be caught by the negative logic. According to our diagram, the system works like this, if a doctor enters the wrong password or MFA code, the system will send the request back to the start at the border of the secure zone. This means that the person trying to gain access will not be allowed to pass through the secure zone unless they enter the correct password or MFA code. Such a security mechanism is very important and crucial when it comes to hospital systems to be able to prevent and protect against any brute force attacks where hackers try to guess credentials.
+
+\subsection{Authentication strength and trust levels} A system like the hospital's where they handle sensitive personal data, then just logging in is not enough. This is operated at different levels of assurance. For healthcare personnel operating internally, MFA is required. This means that the identity is verified through at least two independent factors, as shown in the diagram under ID Provider. By requiring something the user knows as a password and something the user has such as a physical access card or code chip, the risk of unauthorized access if a password were to be revealed is eliminated. Patients who log in externally use national ID solutions such as BankID, which guarantee the highest level of security (level 4).
+
+
+\subsection{Access review and audit (Attestation)} Identity management does not end after access is granted. To maintain high-level security over time, the system must include regular access review procedures. This means that department heads at the hospital must periodically verify that their employees still have a business need for the rights they have been granted. For example, if a nurse changes departments from surgery to psychiatry, the existing access should be cleaned up and new rights should be created from scratch. This practice is important and crucial to prevent privilege creep, where over time they accumulate excessively extensive rights. In addition, automated logs of who has accessed different identities are a legal requirement to document compliance with privacy regulations.
+
 
 
 
 \section{Access Control Policy}
-
+s
 
 
 \section{Authentication Mechanism }
