@@ -37,8 +37,10 @@ Securing Containerized Environments and Kubernetes-Based Deployments \\[1ex]}
 \thispagestyle{empty}
 
 \begin{abstract}
-   You can write few lines about the importance of subject and what your paper is about. 
+Containerized and Kubernetes have reshaped the way software systems are designed, deployed, and operated. This paper provides a systematic analysis of security hardening techniques and security strategies for containerized environments. The paper focuses on issues such as misconfiguration, exposed control planes, API abuse and limitation of static access controls, like role-based access control. We also look at remaining challenges and future directions, emphasizing the need for automated context-aware security settings, scalable and adaptive runtime detection, evolving detailed access control and integrated multi-layered defense.
 \end{abstract}
+
+
 
 %SECTION Introduction
 
@@ -159,6 +161,7 @@ To address these issues, they proposed a API filtering that ensures workloads ca
 
 The API attack surface reduction strengthens Kubernetes security by enforcing the principle of least privilege with more detailed control then traditional RBAC. However, it depends on precise workload information and adds extra policy management that needs to be handled alongside existing RBAC rules.
 
+% SECTION 5
 
 \section{Comparative analysis}
 
@@ -188,6 +191,7 @@ One important insight from this comparison is that no single approach addresses 
 
 These characteristics suggest a multi-layered security that combines several defenses is better than depending on just one. Strengthening the foundational baseline reduces misconfigurations, API filtering can limit damage caused by compromised credentials and runtime monitoring can detect attacks that slips past the preventive measures. This layered approach follows established security practices and reflects the complexity of real-world Kubernetes environment.
 
+% SECTION 6
 
 \section{Future Research Direction}
 
@@ -195,11 +199,53 @@ Despite significant advances in securing containerized and Kubernetes-based envi
 
 \subsection{Automated and Context-Aware Security Configurations}
 
+One of the biggest challenges of the Kubernetes security is the reliance on manual configuration for enforcing security practices. With current security hardening framework, people still have to decide how to use them, which can be difficult and error-prone. This has been a dominant cause of Kubernetes security challenges, especially in complex and rapidly evolving deployments.
 
+Recent research has demonstrated the use of automated and context-aware configurations to reduce human error in Kubernetes. An approach presented by GenKubeSec uses large language model to detect, analyze and recommend fixes for misconfiguration in Kubernetes configuration file. Instead of depending on static rule-based checks, it relies on contextual understanding of configuration and dependencies, enabling more precise detecion and correction that maintain workload integrity \cite{malul2024genkubsec}.
+
+This research indicates that future security development should focus on automated mechanism capable of generating secure default tailored for each workload requirement, cluster topology and threat context. However, this is still an open research problem, since ensuring the correctness and safety of such automated mechanisms.
+
+\subsection{Improving Runtime Detection Accuracy and Scalability}
+
+Runtime monitoring and behavioral detection mechanism play an important role for finding attacks that occur after the application is deployed, especially attacks that evade static defenses or exploit legitimate permissions. Approaches such as behavioral monitoring and deception-based technique have proven useful for detecting compromised workloads and unauthorized actions in Kubernetes environment \cite{Chen2025ShadowKube}.
+
+However, it has been difficult to define what "normal" behavioral looks like, due to the highly dynamic nature of container workloads. Scaling, updating and redeployment can cause normal activity to seem suspicious, leading to false alarms. In large monitoring, constant monitoring can also create extra load and make the system more difficult to manage.
+
+Future research should focus on runtime detection technique that can adapt to changes in workload behavioral while maintaining low false positives. By using the behavioral analysis with selective monitoring of high-risk areas of the Kubernetes may help improve detection without hurting scalability and system manageability.
+
+\subsection{Detailed Policy Control and Updating}
+
+Controlling API Access control in detail and reducing the  attack surface represents strategies for limiting what attackers can exploit in Kubernetes. The traditional role-based access control is too general to effectively protect sensitive API features, motivating approaches that enforce more precise constraint on resource configuration \cite{Cesarano2025KubeFence}.
+
+A major challenge is maintaining correctness and accurate up to date workload change. Policies created from the initial application configurations may become outdated as applications are updated, scaled or reconfigured. If policies are not regularly updated, access control may either allow too much or interfere with normal operations.
+
+Future research should explore ways to update policies as workloads change. It's important that these access control remain aligned with the application while maintaining security.
+
+\subsection{Security for shared and large clusters}
+
+As more teams and organizations use Kubernetes, cluster are increasingly shared, making security failures more serious. In these shared environments, misconfiguration or compromised workloads can affect multiple user if proper isolation isn't in place.
+
+Existing isolation mechanisms, such as namespaces and network policies, provide basic protection but have limitations. Namespacse creates separate virtual spaces within clusters, allowing for resources like pods and services to be logically separated for different teams or application. Network define rules for for how pods can communicate with each other and with external network, helping prevent unauthorized access between workloads. Runtime monitoring unusual behavior as application run and the detailed API restrictions limit what actions users or services can perform. While these measures help, more robust security for shared and large clusters are needed to ensure that breaches in one part of the cluster do not affect the other users.
+
+Future researcher should look at better isolation techniques and multi-user security that work with Kubernetes and provide stronger protection in shared environments.
+
+\subsection{Unified and Multi-Layered Security}
+
+The recent researches have one thing in common, no single security measure can fully protect Kubernetes. Hardening the control plane helps prevent misconfiguration, runtime monitoring catches attacks after deployment and API filtering limits exploitable functionality. But since these tools are often deployed independently it limits their overall effectiveness.
+
+Future Kubernetes framework should aim to integrate preventive, detective and restrictive controls into a single system. This would let the different security measures to share information, improving detection accuracy and response effectiveness. However creating a framework that is both strong and easy that avoids excessive complexity is still a major challenge. 
+
+% SECTION Conclusion
 
 \section{Conclusion}
 
+The rise of containerized and Kubernetes has transformed modern software development and operation, but it has also brought complex security challenges. This paper explored these issues in containerized and Kubernetes environment, highlighting issues such as misconfiguration, exposed control planes, API abuse and limitation of static access controls, like role-based access control.
 
+We looked at recent research on three key Kubernetes security approaches: hardening the control plane and workload, monitoring behavior at runtime and reducing API attack surface. The comparative analysis showed that each of these addressed distinct aspects of the Kubernetes threat model, but none can fully secure a system by itself. Hardening helps prevent misconfiguration, runtime monitoring detects attacks after deployment and detailed API controls limit what attackers can exploit.
+
+The paper also looked at remaining challenges and future directions, emphasizing the need for automated context-aware security settings, scalable and adaptive runtime detection, evolving detailed access control and integrated multi-layered defense. Together, these security measures emphasize that Kubernetes requires coordinated, layered protection instead of relying on individual mechanisms.
+
+In conclusion, protecting Kubernetes-based systems remains challenging but essential as cloud-native environment grow in scale and complexity. Continued research and practical improvement in layered security is approaches will be essential to making containerized deployment more secure and resilient.
 
 \vspace{-12pt}
 
@@ -223,7 +269,7 @@ For such a system as the hospital uses, it is important to protect it from threa
 \begin{figure}[h!]
     \centering
     % Her setter vi bredden til 100% og høyden til maks 8cm
-    \includegraphics[width=0.9\linewidth, height=8cm, keepaspectratio]{image.png}
+    \includegraphics[width=0.9\linewidth, height=8cm, keepaspectratio]{Project/Images/image.png}
     \caption{System Architecture and Security Mechanisms}
     \vspace{10pt} % Gir litt avstand mellom bildet og forklaringen
     \small % Gjør forklaringsteksten litt mindre enn brødteksten for bedre layout
@@ -263,12 +309,53 @@ The diagram we created (fig 1) where all incorrect attempts will be caught by th
 
 
 \section{Access Control Policy}
+A strong Access Control Policy is essential to protect the secure and lawful use of sensitive health information in a regional hospital. While identity management verifies who the user is, this access control defines what that identity actually has access to do in the system. The purpose of this policy is to protect confidentiality, integrity, and availability throughout the patient care process.
+
+\subsection{Granting and managing rights (RBAC and ABAC)} A hybrid model is used for this system, which combines Role-Based and Attribute-Based Access Control (RBAC and ABAC).\\
+
+These rights are assigned primarily based on the user's professional roles. This makes it easier for the administration to set rights for roles such as doctor, nurse and administrative staff, rather than managing individual access for each employee. This is also illustrated in the diagram, where any request to the database must be an Authorized query based on these roles.\\
+
+To achieve a more detailed level of security, RBAC is added with ABAC principles. This means that the system evaluates attributes such as
+
+• Time: where access to users is limited to the scheduled shifts they have.\\
+• Location: Access to highly sensitive modules can be limited to the hospital's internal network.\\
+• Relationship: The system also checks whether there is an active treatment relationship between the doctor and the patient.
+
+\subsection{Specific access rules and examples}
+To follow and ensure the principles of least privilege, specific rules must be established for how different users can interact with data. Here are three key examples:\\
+
+1. A doctor has the rights to read, write and sign medical records, lab results and surgery reports. In contrast, a nurse can only read these documents and record observations such as dispensing medication, but is not authorized to change the doctor's medical assessments or recommend new doses. This applies to clinical documentation.
+
+2. When it comes to patient access, a person with the patient role can only read their own health information via secure portals. These accesses are strictly limited to the person's own identity and do not allow any changes to the medical data.
+
+3. Those with the admin role only have administrative access to logistics systems and bedside charts, but do not have the technical ability to open the actual medical content of the patient record. This limits the risk of internal snooping into sensitive information.
+
+\subsection{Handling Exception Scenarios: Emergency Overrides ("Break-glass")} In everyday life in hospitals, situations may arise where the normal access rules can prevent life-saving assistance. To ensure accessibility during situations such as acute incidents, a (Break-glass) mechanism is implemented.
+
+• Authorization for override: Only clinical personnel with a documented requirement to act in emergency situations (doctors and specialist nurses) are granted the rights to activate Break-glass. Personnel such as admin or external users do not have these rights.\\ 
+
+• Conditions of use: This function should only be used when an acute situation exists that threatens life and health, and the patient is not able to give consent, or when the usual treatment relationship is not yet registered in the system, such as upon the arrival of an unconscious patient in the emergency department.
+
+• Security requirements and follow-up: When Break-glass is activated, the user must provide a mandatory written justification in the system before access is opened. A high-priority event log in the system (mandatory logging) is immediately triggered, notifying the security officer or data protection officer. This protects that any use of emergency access can be audited afterwards to confirm that it was justified, this also prevents abuse of this function.
+
+
+\subsection{Access control in practice} In order to achieve more detailed control over patient information, the system must distinguish between different types of data. As shown in the diagram, the architecture consists of a client side, application server and a database. The access control policy ensures that the communication between these layers is strictly regulated\\
+
+• We have (least privilege) where each person is given only the rights necessary for them to be able to perform their job. For example, a doctor at the work station will be able to see X-ray images. While a porter on a mobile device can only see patient names and room numbers.\\ 
+
+• Having a detailed policy protects against internal threats and reduces the risk of internal snooping. If an employee tries to open a journal or other documents they do not have a business reason to see, the system will deny access based on the predefined rules in the secure zone.\\ 
+
+• An Integrity Control policy ensures that only authorized personnel can change critical information such as medication dosages and allergies. This is essential for patient safety, as unauthorized changes can be life-threatening to any patient.
+
+\subsection{Logging and auditing} A necessary requirement for such a policy is that everything that happens must leave a trace. This supports confidentiality and integrity.\\
+
+The system will store all logs in order to be able to look at it later who has read or changed data. When using the Break-glass function (emergency access) that we mentioned earlier, it will trigger a mandatory log that explains why the normal rules were overridden. This leads to the possibility of performing a check afterwards to protect that no one has abused their rights.
+
+
+
+
+\section{Authentication Mechanism} 
 s
-
-
-\section{Authentication Mechanism }
-
-
 
 \section{Authorization Framework and Zero Trust}
 
