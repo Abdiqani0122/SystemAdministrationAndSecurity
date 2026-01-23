@@ -22,7 +22,7 @@
 \cfoot{\thepage}
 \title{CS4220 -- System Administration and Security \\
 Project Assignments -- Part I \\[2ex] 
-Securing Containerized Environments and Kubernetes-Based Deployments \\[1ex]}  
+A Security Posture-Focused Analysis of Hardening and Defense Mechanisms of Contaiener/Kubernetes Deployment \\[1ex]}  
 \author{
   Abdiqani Abdullahi \\
   \texttt{ababd2714@usn.no}
@@ -46,17 +46,17 @@ Containerized and Kubernetes have reshaped the way software systems are designed
 
 \section{Introduction}
 
-With the increasing adoption of cloud architecture in modern software system, it has reshaped the way systems are designed, deployed and operated.
-The technology behind this is containerization, which enables applications
-to be packaged with their dependencies and executed consistently across environments.
+Cloud-native architectures has become a central part of modern software systems and reshaped how they designed, deployed and operated. The technology behind this shift is containerization, which enables applications to be packaged with their dependencies and executed consistently across different environments.
 
-To orchestrate containerized workload at scale, Kubernetes has emerged as the standard platform, by providing powerful automation capabilities for deployment, scaling and management of containerized applications. That said, the same feature that make Kubernetes flexible and extensive also introduce security challenges. The systems distribute architecture, extensive API framework and declarative configurations make the system prone to misconfiguration, unauthorized privilege gains and unauthorized access.
+To orchestrate containerized workloads at scale, Kubernetes has emerged as the standard platform, by providing powerful automation capabilities for deployment, scaling and management of containerized applications.
 
-The security in Kubernetes relies heavily on correct configuration by administrators and developers and is not enabled by default. There have been real-world incidents that have demonstrated that insecure details, lax role-based access control(RABC) policies and unprotected control plane can allow attackers to compromise entire clusters. With this once the attackers gain access to the Kubernetes API or a privileged workload, they can deploy malicious containers, expand access through connected systems, or abuse cluster resources. 
+Despite these advantages, the same features that make Kubernetes flexible and extensible also introduce security challenges. Its distributed architecture, extensive API framework and reliance on declarative configuration files make the system prone to configuration errors, unauthorized privilege gains and unauthorized access.
 
-Recent researches highlight the common occurrence of these security threats and the limitation of existing defense mechanism. \cite{Moric2025KubernetesSecurity} demonstrates that many Kubernetes compromise stems from the control plane misconfiguration and inadequate security hardening, reinforcing the need for organized security baseline and compliance centered configurations. \cite{Chen2025ShadowKube} shows that the traditional monitoring technique and rule-based defenses are often ineffective in Kubernetes environments, where they suggest the use of behavioral monitoring and honeypot to detect and stop attacks. \cite{Cesarano2025KubeFence} points out that the role-based access control in the Kubernetes API is to broad to protect, and recommends the use of API filtering to reduce the attacks. These studies show that there is not a single security system that will protect Kubernetes, but a combination of preventive hardening, reducing attacks surfaces and active defenses during runtime.
+Security in Kubernetes relies heavily on how the platform is configured and maintained by administrators and developers, rather than being enabled by default. Several real-world incidents have demonstrated that insecure details, overprivileged role-based access control (RBAC) policies and unprotected control plane can allow attackers to compromise entire clusters. Once attackers gain access to the Kubernetes API or a privileged workload, they can deploy malicious containers, expand access through connected systems, or abuse cluster resources. 
 
-By building on these insight, this paper provides a systematic analysis of security hardening techniques and security strategies for containerized environments and Kubernetes based deployments.
+Recent research highlights the common occurrence of these threats and the limitations of existing defense mechanisms. Studies have shown that many Kubernetes compromises stem from the control plane misconfiguration and inadequate security hardening, reinforcing the need for organized security baselines and compliance centered configurations \cite{Moric2025KubernetesSecurity}. Other studies demonstrate that traditional monitoring technique and rule-based defenses are often ineffective in Kubernetes environments, where they suggest the use of behavioral monitoring and honeypot to detect and stop attacks \cite{Chen2025ShadowKube}. Additionally, studies have demonstrated that role-based access control in the Kubernetes API is too broad to provide adequate protection, and recommends the use of API filtering to reduce the attacks \cite{Cesarano2025KubeFence}. Together, these studies show that there is not a single security system that will protect Kubernetes, but a combination of preventive hardening, reducing attack surfaces and active defenses during runtime.
+
+By building on these insights, this paper provides a systematic analysis of security hardening techniques and security strategies for containerized environments and Kubernetes based deployments. The primary focus is on their impact on the security posture of Kubernetes-based deployment, while performance and operational complexity are discussed only when they impact security or add extra security cost.
 
 This paper aims to:
 
@@ -75,7 +75,7 @@ This section presents the technical background on containerized systems and Kube
 
 \subsection{Virtualization and containerization}
 
-Virtualization has long been used to improve resource utilization by runnung multiple virtual machines (VM) to run on a single host. The virtual machines each included their own guest operating system, which provided strong isolation between individual workloads, but at the cost of higher resource usage consumption and slower startup times. While it did improve the infrastructure flexibility, it does not support the scalability and rapid deployment that is required by modern cloud architecture.
+Virtualization has long been used to improve resource utilization by running multiple virtual machines (VM) on a single host. The virtual machines each included their own guest operating system, which provided strong isolation between individual workloads, but at the cost of higher resource usage consumption and slower startup times. While it did improve the infrastructure flexibility, it does not support the scalability and rapid deployment that is required by modern cloud architecture.
 
 Containerization addressed these limitations by enabling application to execute within isolated user spaces while sharing the host operating system kernel. Container engines such as Docker use Linux built isolation and resource limiting mechanism so that containers behave like in separate environment with the same operating system kernel. Compared to the virtual machines, they are faster, more lightweight, consume less resources. However, sharing the host kernel model also introduces new security risk, such as misconfigurations and vulnerabilities that can be exploited by attackers to allow them to escape the container isolation and access the host resources. \cite{Moric2025KubernetesSecurity}
 
@@ -254,10 +254,13 @@ In conclusion, protecting Kubernetes-based systems remains challenging but essen
 
 
 
+
 \clearpage
 \setcounter{part}{1}
-\part{Case Study: Security Design for Healthcare Systems}
+\part{- Case Study: Security Design for Healthcare Systems}
 \setcounter{section}{0}
+
+
 
 \section{System Description and Security Need}
 In this part of the thesis, which is a case study, we have chosen to focus on the Electronic Health Record (EHR) system designed for a regional hospital. This is a digital platform for collecting and storing patient health information across different treatment sites and clinical departments. The main purpose of such a system is to provide healthcare professionals with secure and rapid access to critical patient information, including medical records, lab results, X-rays and surgical reports. This helps increase patient safety and is more efficient when it comes to interaction between doctors, nurses and other support staff.\\
@@ -343,9 +346,9 @@ To follow and ensure the principles of least privilege, specific rules must be e
 
 • We have (least privilege) where each person is given only the rights necessary for them to be able to perform their job. For example, a doctor at the work station will be able to see X-ray images. While a porter on a mobile device can only see patient names and room numbers.\\ 
 
-• Having a detailed policy protects against internal threats and reduces the risk of internal snooping. If an employee tries to open a journal or other documents they do not have a business reason to see, the system will deny access based on the predefined rules in the secure zone.\\ 
+• To reduce the risk of internal snooping, it is important to have a strong policy that protects against internal threats. If records or other documents are attempted to be opened by other employees who do not have a business reason to see them, the system will not grant them access based on predefined rules in the secure zone.\\ 
 
-• An Integrity Control policy ensures that only authorized personnel can change critical information such as medication dosages and allergies. This is essential for patient safety, as unauthorized changes can be life-threatening to any patient.
+• Since unauthorized changes to medication dosages and allergies can be life-threatening for patients, it is essential to have a strong integrity control policy that helps protect that only personnel with authorized access are allowed to change medication dosages and allergies, which are critical information.
 
 \subsection{Logging and auditing} A necessary requirement for such a policy is that everything that happens must leave a trace. This supports confidentiality and integrity.\\
 
@@ -355,9 +358,93 @@ The system will store all logs in order to be able to look at it later who has r
 
 
 \section{Authentication Mechanism} 
-s
+To protect that only authorized users have access to a hospital system that belongs to sensitive resources, a strong authentication mechanism is required. The process of authentication involves validating a declared identity. Different methods are also implemented in the system depending on user groups, location and risk level, to find the right balance between security and efficient workflow.
+
+\subsection{Healthcare professional authentication (MFA)} It is not enough to just have a username and password for doctors, nurses and other clinical personnel. Therefore, multi-factor authentication – MFA is used. Users must present at least two of the three authentication factors. This can be a smart card (access card) that has an embedded chip, and biometric verification (fingerprint) or something only the user knows such as a personal PIN code.
+
+\begin{figure}[h!]
+    \centering
+     \includegraphics[width=0.9\linewidth, height=10cm, keepaspectratio]
+   {Project//Images/image2.png}
+    \caption{MFA}
+        \vspace{10pt}
+    \label{fig:placeholder}
+\end{figure}
+
+Ease of use can be critical in a busy hospital environment. To prevent staff from having to go through a full MFA process every time they need to check a screen, we are implementing session-based access. Where users, after a full login at the start of their shift, can simply tap their card to quickly unlock workstations, as long as they are within the secure zone of the hospital. This means that security measures are both protected and do not become an obstacle for situations such as emergency patient care.
+
+\subsection{External authentication for patients} For patients to access their own data via a web portal, the challenge is different. The hospital cannot distribute physical cards to all residents (patients). Here, identity federations (as mentioned in task 2) will be used against national ID providers such as BankID or MinID.\\
+
+This provides a very high level of trust (security level 4), since these providers have already carried out thorough identity checks on the user. By using such a solution that the patient is familiar with, user-friendliness increases while moving the risk of storing sensitive login data out of the hospital's own systems.
+
+\subsection{Risk and mitigation measures}
+No authentication method is completely risk-free, so we need to take into account some of the following threats:\\ 
+
+• Credential theft: with traditional password solutions, an attacker can use phishing attacks to steal passwords. The stolen passwords become worthless on their own when we use an MFA solution. Because the attacker must also have access to both physical cards (smart cards/access cards) and the user's fingerprint or face recognition (biometric data) to be successful with the attack.\\
+
+• Impersonation: If an employee forgets to log out of a terminal, another can impersonate them. To reduce this risk, we implement automatic timeouts and physical proximity requirements. This means that after the card is read, the card reader will see whether the session is still active or not.\\
+
+• The system uses encrypted channels for all information sent – TLS 1.3. This ensures that authentications are not intercepted along the way. This also ensures that there is no attack against the system such as a man-in-the-middle attack.
+
+\subsection{Support for trusted access decisions}Once a user is authenticated, the information must be passed on to the rest of the system in a correct manner. This is done by the system creating a digital proof, e.g. JSON Web Token – JWT, which is locked with a digital signature.\\
+
+The token consists of information such as identity and authentication level about the user. The token is automatically sent when the user retrieves information from the database. In this way, the system's authorization service can check the signature on the token. The system can then be absolutely sure that the login is genuine and that the information has not been manipulated along the way by a third party. This protects a smooth security chain from login to data authentication, which is a cornerstone of a Zero Trust design.
 
 \section{Authorization Framework and Zero Trust}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+\setcounter{part}{2}
+\part{- VPN Lab (20 points)}
+\setcounter{section}{0}
+
+
+\section{Task 1 – Network Setup}
+
+
+
+
+\section{Task 2 – Create and Configure TUN Interface }
+
+
+
+\section{Task 3 – Send the IP Packet to VPN Server Through a Tunnel }
+
+
+
+\section{Task 4 – Set Up the VPN Server }
+
+
+
+\section{Task 5 – Handling Traffic in Both Directions }
+
+
+
+
 
 
 
