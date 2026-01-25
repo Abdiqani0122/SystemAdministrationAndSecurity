@@ -46,17 +46,19 @@ Containerized and Kubernetes have reshaped the way software systems are designed
 
 \section{Introduction}
 
-Cloud-native architectures has become a central part of modern software systems and reshaped how they designed, deployed and operated. The technology behind this shift is containerization, which enables applications to be packaged with their dependencies and executed consistently across different environments.
+Cloud-native architectures have become a central part of modern software systems and reshaped how they are designed, deployed and operated. The technology behind this shift is containerization, which enables applications to be packaged with their dependencies and executed consistently across different environments.
 
 To orchestrate containerized workloads at scale, Kubernetes has emerged as the standard platform, by providing powerful automation capabilities for deployment, scaling and management of containerized applications.
 
-Despite these advantages, the same features that make Kubernetes flexible and extensible also introduce security challenges. Its distributed architecture, extensive API framework and reliance on declarative configuration files make the system prone to configuration errors, unauthorized privilege gains and unauthorized access.
+Despite these advantages, the same features that make Kubernetes flexible and extensible also introduce security challenges. Its distributed architecture, extensive API framework and reliance on declarative configuration files can make the system vulnerable to configuration errors, unauthorized privilege gains and unauthorized access.
 
 Security in Kubernetes relies heavily on how the platform is configured and maintained by administrators and developers, rather than being enabled by default. Several real-world incidents have demonstrated that insecure details, overprivileged role-based access control (RBAC) policies and unprotected control plane can allow attackers to compromise entire clusters. Once attackers gain access to the Kubernetes API or a privileged workload, they can deploy malicious containers, expand access through connected systems, or abuse cluster resources. 
 
-Recent research highlights the common occurrence of these threats and the limitations of existing defense mechanisms. Studies have shown that many Kubernetes compromises stem from the control plane misconfiguration and inadequate security hardening, reinforcing the need for organized security baselines and compliance centered configurations \cite{Moric2025KubernetesSecurity}. Other studies demonstrate that traditional monitoring technique and rule-based defenses are often ineffective in Kubernetes environments, where they suggest the use of behavioral monitoring and honeypot to detect and stop attacks \cite{Chen2025ShadowKube}. Additionally, studies have demonstrated that role-based access control in the Kubernetes API is too broad to provide adequate protection, and recommends the use of API filtering to reduce the attacks \cite{Cesarano2025KubeFence}. Together, these studies show that there is not a single security system that will protect Kubernetes, but a combination of preventive hardening, reducing attack surfaces and active defenses during runtime.
+Recent research highlights the common occurrence of these threats and the limitations of existing defense mechanisms. Studies have shown that many Kubernetes compromises stem from the control plane misconfiguration and inadequate security baselines, reinforcing the need for organized security baselines and compliance centered configurations \cite{Moric2025KubernetesSecurity}. Other studies demonstrate that traditional rule based techniques are ineffective in Kubernetes dynamic environments, where attackers operate using legitimate API calls. As a result, the use of behavioral monitoring and honeypot to detect and stop attacks have been proposed \cite{Chen2025ShadowKube}. Additionally, studies have demonstrated that role-based access control in the Kubernetes API is too broad to provide adequate protection, and recommends the use of API filtering to reduce the attack surface \cite{Cesarano2025KubeFence}.
 
-By building on these insights, this paper provides a systematic analysis of security hardening techniques and security strategies for containerized environments and Kubernetes based deployments. The primary focus is on their impact on the security posture of Kubernetes-based deployment, while performance and operational complexity are discussed only when they impact security or add extra security cost.
+Together, these studies show that there is not a single security system that will protect Kubernetes, but a combination of preventive hardening, reducing attack surfaces and active defenses during runtime.
+
+By building on these insights, this paper provides a systematic analysis of security hardening techniques and security strategies for containerized environments and Kubernetes based deployments. The primary focus is on their impact on the security posture, while performance and operational complexity are discussed only when they impact security or add extra security cost.
 
 This paper aims to:
 
@@ -71,33 +73,35 @@ This paper aims to:
 
 \section{Background and Threat Model}
 
-This section presents the technical background on containerized systems and Kubernetes, and defines threat model used throughout the paper.
+This section presents the technical foundations of container-based systems and Kubernetes and provides an introduction on threat models.
 
 \subsection{Virtualization and containerization}
 
-Virtualization has long been used to improve resource utilization by running multiple virtual machines (VM) on a single host. The virtual machines each included their own guest operating system, which provided strong isolation between individual workloads, but at the cost of higher resource usage consumption and slower startup times. While it did improve the infrastructure flexibility, it does not support the scalability and rapid deployment that is required by modern cloud architecture.
+Traditionally, Virtualization host multiple virtual machines (VM) on a single host, improving resource utilization. Each virtual machine included their own guest operating system, providing strong isolation between individual workloads, but also lead to higher resource consumption and slower startup times. While this did improve the infrastructure flexibility, it does not support the scalability and rapid deployment that is required by modern cloud architecture.
 
-Containerization addressed these limitations by enabling application to execute within isolated user spaces while sharing the host operating system kernel. Container engines such as Docker use Linux built isolation and resource limiting mechanism so that containers behave like in separate environment with the same operating system kernel. Compared to the virtual machines, they are faster, more lightweight, consume less resources. However, sharing the host kernel model also introduces new security risk, such as misconfigurations and vulnerabilities that can be exploited by attackers to allow them to escape the container isolation and access the host resources. \cite{Moric2025KubernetesSecurity}
+Containerization addresses these limitation, by enables applications to execute within isolated user spaces while sharing the host operating system kernel. Container runtimes such as Docker rely on Linux's built-in namespaces and control groups, enabling containers to operate in separate environments while sharing the same operating system kernel. Unlike virtual machines, containers are more lightweight, start faster and consume fewer resources. However, sharing the host kernel model also introduces additional security risks, such as misconfigurations or vulnerabilities affecting container privileges, runtime settings, or kernel interfaces, that may be exploited by attackers to allow them to escape container isolation \cite{Moric2025KubernetesSecurity}.
 
 \subsection{Container orchestration and Kubernetes}
 
-As the container application becomes more widely adopted, the need to manage a large number of containers across distributed environements led to the development of a platform to manage these containers. Kubernetes emerged as the dominant orchestration system, automating deployment, management, recovery and scaling of containerized application.
+As containers became widely adopted, the need to manage a large number of containers across distributed environments led to the development of a platform to manage these containers. Kubernetes emerged as the dominant orchestration system, automating deployment, management, recovery and scaling of containerized applications.
 
-Kubernetes operates using clusters that consist of a control plane and a set of worker nodes. The control plane consist of components such as API server, scheduler, control manager and the etcd key-value store that are critical to the management of the overall state of the clusters. Worker nodes run applications workloads in the form of pods, these pods group one or more containers together and share network and storage resources. Interactions with the clusters such as deploying application or changing the configuration file is done through the Kubernetes API.
+A Kubernetes cluster is composed of a control plane and a set of worker nodes. The control plane consists of components such as API server, scheduler, controller manager and the etcd key-value store that are critical to the management of the overall state of the clusters. Worker nodes run application workloads in the form of pods, which group one or more containers together and share network and storage resources. All interactions with the cluster, such as deploying applications or modifying the configuration file is performed through the Kubernetes API.
 
-Even though Kubernetes makes application management easier and more efficient through flexibility and automation, it also expands the systems attack surface. It exposes a wide variety of functionality that, if not properly secured, can be exploited by attackers. Studies \cite{Cesarano2025KubeFence} show that many vulnerabilities and misconfigurations are caused by API features, making the Kubernetes API a target for attackers. Furthermore, because Kubernetes workloads are constantly changing, making consistent policies is difficult, as shown in real-world deployment \cite{Chen2025ShadowKube}.
+While Kubernetes makes application management easier and more efficient through flexibility and automation, it also expands the system's attack surface. The API exposes a wide variety of functionality that, if not properly secured, can be exploited by attackers. Studies show that many security incidents stem from API misuse and misconfigurations, making the Kubernetes API a target for attackers \cite{Cesarano2025KubeFence}. Furthermore, because Kubernetes workloads are constantly changing, making consistent policies is difficult, as shown in real-world deployments \cite{Chen2025ShadowKube}.
 
 \subsection{Security Model of Kubernetes}
 
-Kubernetes several built--in security mechanism specifically for the API, such as authentication, authorization and admission control. Authentication confirms the identify of the user and services interacting with the cluster, while authorization is generally handled by role-based access control (RBAC). RBAC decides permission for Kubernetes resources such as pods, deployment, and specifies which actions the users and services can perform.
+Access to the Kubernetes API is protected through multiple security mechanisms. These include authentication, authorization and admission control. Authentication confirms the identity of the users and the services interacting with the cluster, while authorization is generally enforced using role-based access control (RBAC). RBAC policies define permission for users and services to perform action in Kubernetes resources such as pods, deployment, and specifies which actions the users and services can perform.
 
-However, RBAC only gives basic control of who can access resources, but does not limit how specific settings inside those resources can be used. This makes it possible for users with legitimate access to the resources to abuse advanced configurations to gain more privileges or exploit weaknesses. Security measures, such as network policies, pod security settings, and audit logging need to be manually set up and maintained by administrators. With these controls often applied inconsistently or turned off, it contributes significantly to Kubernetes security incidents \cite{Moric2025KubernetesSecurity}.
+However, RBAC only controls access at the resource level, but does not limit how specific settings inside those resources can be used. This makes it possible for users or services with legitimate access to abuse advanced configurations to gain more privileges or exploit weaknesses. Security measures, such as network policies, pod security settings, and audit logs, must be manually set up and maintained by administrators. With these controls often applied inconsistently or turned off, they contribute significantly to Kubernetes security incidents \cite{Moric2025KubernetesSecurity}.
 
 \subsection{Threat Model}
 
-Given the centralized role of Kubernetes in managing containerized environments, this paper focuses on a threat model that focuses on the attackers exploiting weaknesses in the Kubernetes configuration, access control mechanisms and workload isolation to gain unauthorized influence over cluster behavior. These attacks operate through compromised containers, misconfigured service accounts or exposed Kubernetes API endpoints, which allows them to issued legitimate API request with malicious intent.
+Given the centralized role of Kubernetes in managing containerized environments, this paper adopts a threat model in which attackers exploit weaknesses in the Kubernetes configuration, access control mechanisms and workload isolation to gain unauthorized influence over cluster behavior. These attacks operate through compromised containers, misconfigured service accounts, or exposed Kubernetes API endpoints, which allows them to issue legitimate API requests with malicious intent.
 
-The primary asset under protection in this model is the Kubernetes control plane, integrity of declarative configuration, isolation between workloads, and sensitive data such as secret or credentials. Once initial access is gained, attackers are assumed to be able to deploy and modify workloads and influence the cluster behavior through legitimate API operations. This analysis emphasizes configuration driven attacks paths and security risk that are fundamental to Kubernetes orchestration and does not consider attacks targeting the underlying infrastructure, hardware, kernel-level vulnerabilities or cloud provider services.
+Once attackers establish access, they are capable of issuing legitimate API request restricted to their authorization access. Attack paths often take the form of privilege due to lenient RBAC policies, exploitation of advanced configuration features to modify workload configuration and move laterally across namespaces and nodes.  
+
+The primary asset protected in this model is the Kubernetes control plane, the integrity of declarative configuration, isolation between workloads, and sensitive data such as secrets or credentials. Once initial access is gained, attackers are assumed to be able to deploy and modify workloads and influence the cluster behavior through legitimate API operations. This analysis emphasizes configuration driven attacks paths and security risks that are fundamental to Kubernetes orchestration and does not consider attacks targeting the underlying infrastructure, hardware, kernel-level vulnerabilities or cloud provider services.
 
 
 %SECTION 3
@@ -121,9 +125,9 @@ Despite the fact that Kubernetes uses authentication and authorization mechanism
 
 \subsection{Limitations of Role-Based Access Control and Static Access Control}
 
-The primary authorization mechanism used in Kubernetes to regulate access to cluster resources is role-based access control. The RBAC policies specify witch users or services that can perform actions on the Kubernetes resources such as pods, deployment or services. While the role-based access control provides a clear and standarized approach to access control, it has limitations in managing access in complex and rapidly changing Kubernetes environement.
+Role-based access control is the primary authorization mechanism used in Kubernetes to regulate access to cluster resources. The RBAC policies specify witch users or services that can perform actions on the Kubernetes resources such as pods, deployment or services. While the role-based access control provides a clear and standarized approach to access control, it has limitations in managing access in complex and rapidly changing Kubernetes environement.
 
-A key limitation of RBAC is that it grants broad permission, without fine control over evert possible action. RBAC policies decides what kind of resources (pods, deployment or service) a user can access and what actions they can perform on them like (create, delete and modify). But it does not control the small details inside the resources such as the specific configuration option a user can choose. This means users with permission to create or modify resources can can misuse advanced configuration option to gain privileges or bypass isolation
+A key limitation of RBAC is that it grants broad permission, without fine control over evert possible action. RBAC policies decides what kind of resources (pods, deployment or service) a user can access and what actions they can perform on them like (create, delete and modify). But it does not control the small details inside the resources such as the specific configuration option a user can choose. Users with permission to create or modify resources can can misuse advanced configuration option to gain privileges or bypass isolation
 
 RBAC is also a static access control, meaning it does not adjust to change in how workload behave or run. Since Kubernetes environement is dynamic, workloads are being created, scaled and removed constantly and because RBAC is a fixed, the policies cannot respond to unusual activity or misuse of granted permission at runtime. This limits it effectiveness against compromised workloads trusted users who misuse their small permissions to cause problems.
 
@@ -157,13 +161,13 @@ Runtime monitoring improves security by making it possible to detect attacks tha
 
 To further enhance Kubernetes security, the API attack surface must be reduced. Researcher's \cite{Cesarano2025KubeFence} argue that the Kubernetes role-based access control is to broad for adequately protecting the API, since it does not restrict how configuration fields withing the resources are used. This allows attackers to exploit advanced features of the API, even while operating withing the boundaries of assigned permission.
 
-To address these issues, they proposed a API filtering that ensures workloads can only access the API features they need. The system looks at analyzes trusted application configurations to create safe API policies. These configurations can include Kubernetes Operators, which are programs that help manage and automate applications on the clusters. Another one is Helm Charts, which are templates that define how applications should be deployed. By analyzing these, the system can block unnecessary or risky API features while still letting normal workloads run correctly, reducing the attack surface attackers can misuse the API.
+To address these issues, they proposed a API filtering that ensures workloads can only access the API features they need. The system looks at analyzes trusted application configurations to create safe API policies. These configurations can include Kubernetes Operators, which are programs that help manage and automate applications on the clusters, as well as Helm Charts, which are templates that define how applications should be deployed. By analyzing these, the system can block unnecessary or risky API features while still letting normal workloads run correctly, reducing the attack surface attackers can misuse the API.
 
 The API attack surface reduction strengthens Kubernetes security by enforcing the principle of least privilege with more detailed control then traditional RBAC. However, it depends on precise workload information and adds extra policy management that needs to be handled alongside existing RBAC rules.
 
 % SECTION 5
 
-\section{Comparative analysis}
+\section{Comparative analysis of Security Hardening}
 
 The security approaches discussed in the previous sections addresses Kubernetes security challenges from different perspectives. While their goals is to improve the overall security of the Kubernetes environment, they wary in assumption, scope and operation. In this section we will compare these approaches, their effectiveness, their impact and the trade-offs they introduce in deployment and operation.
 
@@ -391,14 +395,47 @@ No authentication method is completely risk-free, so we need to take into accoun
 The token consists of information such as identity and authentication level about the user. The token is automatically sent when the user retrieves information from the database. In this way, the system's authorization service can check the signature on the token. The system can then be absolutely sure that the login is genuine and that the information has not been manipulated along the way by a third party. This protects a smooth security chain from login to data authentication, which is a cornerstone of a Zero Trust design.
 
 \section{Authorization Framework and Zero Trust}
+In this part of the case study, we will look at how the various security measures we have presented in the previous tasks in Part 2 – identity management, access control and authentication – work together in a modern framework called Zero Trust.
+
+\subsection{What is Zero Trust?}
+Old IT security often functioned as a (castle or moat) trusting everything inside the hospital walls. In this system, we use the Zero Trust model instead. The main reason here is simple (Never trust anyone, always check).
+This means that even if a doctor is sitting in their own office inside the hospital, the system will not automatically trust them. Every single request to see a patient record must be re-approved. We use these three points from task 2 to achieve these:\\
+
+1. Through federated identity we can know exactly who the user is, this was mentioned under task 2 regarding identity.\\ 
+
+2. We are also sure that the user is who they claim to be via MFA (Task 4 – Authentication).\\
+
+3. As mentioned earlier (Task 3 – Access Control) we only grant access to what is strictly necessary, so-called Least Privilege.
+
+\subsection{The interaction between the components}
+We can imagine Zero Trust as a doorman who never sleeps. The following operations occur in the background when a nurse tries to open a patient's medication list on an iPad:\\ 
+
+• The system will first check for the digital proof (token) we mentioned in task 4 (identity verification). Is this a valid employee?, and is the signature real?\\
+
+• This is where attribute-based control (ABAC) comes in. The system will not only check for the role such as nurse, it will also be able to see where the iPad is located. Is it the secure zone of the hospital or another place such as an internet cafe? If it is in an unsecured place, access will be blocked (context check).\\
+
+• The last part is about policy enforcement, where it will check the rules from task 3. such as does this nurse have a patient relationship with the patient in question right now? If yes, the data is opened. Access will be denied if the requirements are not met. All events will be logged in the system to be able to follow up on suspected snooping.
+
+\subsection{Protection of data integrity and confidentiality}
+By using such a framework, we take care of the most important goals that go into information security:\\ 
+
+• With regard to confidentiality, we use encryption-TLS 1.3 and strict access control, which ensures that sensitive health information does not end up in the wrong hands. Only those who have a business need to have access to see the information.\\
+
+• Regarding integrity, as we mentioned in task 3, it is ensured that no one can change medication doses or allergies without having the correct authorizations. By using a Zero Trust system, all changes are signed and logged, this way we can always trust that the data in the database is completely correct.
+
+\subsection{Managing risk in a regional perspective}
+Since such a system is for a regional hospital, the risk will be higher because there will be many users and huge amounts of data. A so-called attack surface will be reduced by Zero Trust. If an attacker manages to steal an employee's password, they will still be stopped by the requirements for MFA (physical smart card) or by the system detecting that the login is happening from an unusual location\\
+
+This framework makes it easier to collaborate with other hospitals. Since we use a so-called token such as JWT and federated identity (BankID/MinID), we can trust identities that come from other trusted sources without having to open our entire system to risk.
+
+\subsection{Summary} Zero Trust is not a simple program that you can install, it is a strategy. By combining strict access control guidelines, secure authentication with MFA, and a clean Identity Management, we have built a system that protects patients from both external attacks and internal errors. This protects the technology that helps employees save lives, without security getting in the way of the work they do.
 
 
 
 
 
 
-
-
+kÅlå
 
 
 
