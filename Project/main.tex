@@ -9,11 +9,15 @@
 \usepackage{subcaption}
 \usepackage{wrapfig}
 \usepackage{array}
+\usepackage{float}
 \usepackage{multirow}
 \usepackage{tocloft}
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 \usepackage{nopageno}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\usepackage{nameref}
 \pagenumbering{arabic}
 \pagestyle{fancy}
 \fancyhf{}
@@ -46,17 +50,17 @@ Containerized and Kubernetes have reshaped the way software systems are designed
 
 \section{Introduction}
 
-Cloud-native architectures have become a central part of modern software systems and reshaped how they are designed, deployed and operated. The technology behind this shift is containerization, which enables applications to be packaged with their dependencies and executed consistently across different environments.
+Cloud-native architectures have become a central part of modern software systems and have changed how they are designed, deployed and operated. The technology behind this shift is containerization, which enables applications to be packaged with their dependencies and executed consistently across different environments.
 
-To orchestrate containerized workloads at scale, Kubernetes has emerged as the standard platform, by providing powerful automation capabilities for deployment, scaling and management of containerized applications.
+To manage containerized workloads at scale, Kubernetes has emerged as the standard platform by providing powerful automation capabilities for deployment, scaling and management of containerized applications.
 
-Despite these advantages, the same features that make Kubernetes flexible and extensible also introduce security challenges. Its distributed architecture, extensive API framework and reliance on declarative configuration files can make the system vulnerable to configuration errors, unauthorized privilege gains and unauthorized access.
+Despite these advantages, the same features that make Kubernetes flexible and extensible also introduce security challenges. Its distributed architecture, extensive API framework and reliance on declarative configuration files can make the system vulnerable due to configuration errors, unauthorized privilege gains and unauthorized access.
 
-Security in Kubernetes relies heavily on how the platform is configured and maintained by administrators and developers, rather than being enabled by default. Several real-world incidents have demonstrated that insecure defaults, overprivileged role-based access control (RBAC) policies and unprotected control plane can allow attackers to compromise entire clusters. Once attackers gain access to the Kubernetes API or a privileged workload, they can deploy malicious containers, expand access through connected systems, or abuse cluster resources. 
+The security in Kubernetes relies heavily on how the platform is configured and maintained by administrators and developers, rather than being enabled by default. Several real-world incidents have demonstrated that insecure defaults, overprivileged role-based access control (RBAC) policies and poorly protected control plane can allow attackers to compromise entire clusters. Once attackers gain access to the Kubernetes API or a privileged workload, they can deploy malicious containers, expand access through connected systems, or abuse cluster resources. 
 
-Recent research highlights the common occurrence of these threats and the limitations of existing defense mechanisms. Studies have shown that many Kubernetes compromises stem from the control plane misconfiguration and inadequate security baselines, reinforcing the need for organized security baselines and compliance centered configurations \cite{Moric2025KubernetesSecurity}. Other studies demonstrate that traditional rule-based techniques are ineffective in Kubernetes dynamic environments, where attackers operate using legitimate API calls. As a result, the use of behavioral monitoring and honeypots to detect and stop attacks have been proposed \cite{Chen2025ShadowKube}. Additionally, studies have demonstrated that role-based access control in the Kubernetes API is too broad to provide adequate protection, and recommends the use of API filtering to reduce the attack surface \cite{Cesarano2025KubeFence}.
+Recent research highlights the common occurrence of these threats and the limitations of existing defense mechanisms. Studies have shown that many Kubernetes compromises stem from the control plane misconfiguration and inadequate security baselines, reinforcing the need for organized security baselines and compliance centered configurations \cite{Moric2025KubernetesSecurity}. Other studies demonstrate that traditional rule-based techniques are ineffective in dynamic Kubernetes environments, where attackers operate using legitimate API calls. As a result, the use of behavioral monitoring and honeypots to detect and stop attacks have been proposed \cite{Chen2025ShadowKube}. Additionally, studies have demonstrated that role-based access control in the Kubernetes API is too broad to provide adequate protection, and motivates the use of API filtering to reduce the attack surface \cite{Cesarano2025KubeFence}.
 
-Together, these studies show that there is not a single security system that will protect Kubernetes, but a combination of preventive hardening, reducing attack surfaces and active defenses during runtime.
+Together, these studies show that there is not a single security system that will protect Kubernetes, but a combination of preventive hardening, reducing attack surfaces and active defenses during runtime \cite{Moric2025KubernetesSecurity} \cite{Chen2025ShadowKube} \cite{Cesarano2025KubeFence}.
 
 By building on these insights, this paper provides a systematic analysis of security hardening techniques and security strategies for containerized environments and Kubernetes based deployments. The primary focus is on their impact on the security posture, while performance and operational complexity are discussed only when they impact security or add extra security cost.
 
@@ -73,37 +77,37 @@ This paper aims to:
 
 \section{Background and Threat Model}
 
-This section presents the technical foundations of container-based systems and Kubernetes and provides an introduction on threat models.
+This section introduces the technical foundations of container-based systems and Kubernetes and provides an introduction to threat models.
 
 \subsection{Virtualization and containerization}
 
-Traditionally, Virtualization hosts multiple virtual machines (VM) on a single host, improving resource utilization. Each virtual machine included their own guest operating system, providing strong isolation between individual workloads, but also led to higher resource consumption and slower startup times. While this did improve the infrastructure flexibility, it did not support the scalability and rapid deployment that is required by modern cloud architecture.
+Traditionally, virtualization hosts multiple virtual machines (VMs) on a single host, which improves resource utilization. Each VM include their own guest operating system, providing strong isolation between individual workloads, but also lead to higher resource consumption and slower startup times. While this does improve infrastructure flexibility, it does not support the scalability and rapid deployment that is required by modern cloud architecture.
 
-Containerization addresses these limitations, by enabling applications to execute within isolated user spaces while sharing the host operating system kernel. Container runtimes such as Docker rely on Linux's built-in namespaces and control groups, enabling containers to operate in separate environments while sharing the same operating system kernel. Unlike virtual machines, containers are more lightweight, start faster and consume fewer resources. However, sharing the host kernel model also introduces additional security risks, such as misconfigurations affecting container privileges and runtime settings (e.g. privileged containers, host namespace access or excessive Linux capabilities). These weaknesses may be exploited by attackers to allow them to escape container isolation \cite{Moric2025KubernetesSecurity}. The paper focus on attacks caused by misconfiguration that weaken isolation in Kubernetes and does not consider exploits involving new kernel zero-day vulnerabilities.
+Containerization addresses these limitations by enabling applications to run in isolated user spaces while sharing the host operating system kernel. Container runtimes like Docker rely on kernel namespaces and control groups, enabling containers to operate in separate environments while sharing the same operating system kernel. Unlike VMs, containers are more lightweight, start faster and consume fewer resources. However, sharing the host kernel model also introduces additional security risks, such as misconfigurations affecting container privileges and runtime settings (e.g. privileged containers, host namespace access or excessive Linux capabilities). These weaknesses can be exploited by attackers to allow them to escape container isolation \cite{Moric2025KubernetesSecurity}. The paper focuses on attacks caused by misconfiguration that weaken isolation in Kubernetes and does not consider exploits involving new kernel zero-day vulnerabilities.
 
 \subsection{Container orchestration and Kubernetes}
 
-As containers became widely adopted, the need to manage a large number of containers across distributed environments led to the development of a platform to manage these containers. Kubernetes emerged as the dominant orchestration system, automating deployment, management, recovery and scaling of containerized applications.
+As containers became widely adopted, the need to manage a large number of containers across distributed environments led to the development of a platform to manage these containers. Kubernetes emerged as the leading orchestration system by automating deployment, management, recovery and scaling of containerized applications.
 
-A Kubernetes cluster is composed of a control plane and a set of worker nodes. The control plane consists of components such as API server, scheduler, controller manager and the etcd key-value store that are critical to the management of the overall state of the clusters. Worker nodes run application workloads in the form of pods, which group one or more containers together and share network and storage resources. All interactions with the cluster, such as deploying applications or modifying the configuration files are performed through the Kubernetes API.
+A Kubernetes cluster is made of a control plane and multiple worker nodes. The control plane consists of components such as API server, scheduler, controller manager and the etcd key-value store that are critical to the management of the overall state of the clusters. Worker nodes run application workloads in the form of pods, which group one or more containers together and share network and storage resources. All interactions with the cluster, like deploying applications or modifying the configuration file are performed through the Kubernetes API.
 
-While Kubernetes makes application management easier and more efficient through flexibility and automation, it also expands the system's attack surface. The API exposes a wide variety of functionality that, if not properly secured, can be exploited by attackers. Studies show that many security incidents stem from API misuse and misconfigurations, making the Kubernetes API a target for attackers \cite{Cesarano2025KubeFence}. Furthermore, because Kubernetes workloads are constantly changing, making consistent policies is difficult, as shown in real-world deployments \cite{Chen2025ShadowKube}.
+Although Kubernetes makes application management easier and more efficient through flexibility and automation, it also expands the system's attack surface. The API exposes a wide variety of functionality that, if not properly secured, can be exploited by attackers. Research shows that many security incidents stem from API misuse and misconfigurations, making the Kubernetes API a target for attackers \cite{Cesarano2025KubeFence} \cite{Moric2025KubernetesSecurity}. Furthermore, because Kubernetes workloads are constantly changing, making consistent policies is difficult, as shown in real-world deployments \cite{Chen2025ShadowKube}.
 
 \subsection{Security Model of Kubernetes}
 
 Access to the Kubernetes API is protected through multiple security mechanisms. These include authentication, authorization and admission control. Authentication confirms the identity of the users and the services interacting with the cluster, while authorization is generally enforced using role-based access control (RBAC). RBAC policies define permissions for users and services to perform actions on Kubernetes resources such as pods, deployment, and specifies which actions the users and services can perform.
 
-However, RBAC only controls access at the resource level, but does not limit how specific settings inside those resources can be used. This makes it possible for users or services with legitimate access to abuse advanced configurations to gain more privileges or exploit weaknesses. Security measures, such as network policies, pod security settings, and audit logs, must be manually set up and maintained by administrators. With these controls often applied inconsistently or turned off, they contribute significantly to Kubernetes security incidents \cite{Moric2025KubernetesSecurity}.
+However, RBAC only controls access at the resource level, but does not limit how specific settings inside those resources can be used. This makes it possible for users or services with legitimate access to abuse advanced configurations to gain more privileges or exploit weaknesses \cite{Cesarano2025KubeFence}. Security measures, such as network policies, pod security settings and audit logs, must be manually set up and maintained by administrators. With these controls often applied inconsistently or turned off, they contribute significantly to Kubernetes security incidents \cite{Moric2025KubernetesSecurity}.
 
 \subsection{Threat Model}
 
-Given the centralized role of Kubernetes in managing containerized environments, this paper adopts a threat model in which attackers exploit weaknesses in the Kubernetes configuration, access control mechanisms and workload isolation to gain unauthorized influence over cluster behavior. These attacks operate through compromised containers, misconfigured service accounts, or exposed Kubernetes API endpoints, which allows them to issue legitimate API requests with malicious intent.
+Given the centralized role of Kubernetes in managing containerized environments, this paper adopts a threat model in which attackers exploit weaknesses in the Kubernetes configuration, access control mechanisms and workload isolation to gain unauthorized influence over cluster behavior. These attacks operate through compromised containers, misconfigured service accounts, or exposed Kubernetes API endpoints, which allows them to issue legitimate API requests with malicious intent \cite{Moric2025KubernetesSecurity} \cite{Chen2025ShadowKube} \cite{Cesarano2025KubeFence}.
 
-Once attackers establish access, they are capable of issuing legitimate API requests restricted to their authorization access. Attack paths often take the form of privilege escalation due to lenient RBAC policies, exploitation of advanced configuration features to modify workload configuration and move laterally across namespaces and nodes.  
+Once attackers establish access, they are capable of issuing legitimate API requests restricted to their authorization access \cite{Chen2025ShadowKube} \cite{Cesarano2025KubeFence}. Attack paths often take the form of privilege escalation due to lenient RBAC policies, exploitation of advanced configuration features to modify workload configuration and move laterally across namespaces and nodes.  
 
-The primary asset protected in this model is the Kubernetes control plane, the integrity of declarative configuration, isolation between workloads, and sensitive data such as secrets or credentials. Once initial access is gained, attackers are assumed to be able to deploy and modify workloads and influence the cluster behavior through legitimate API operations.
+The primary assets protected in this model are the Kubernetes control plane, which includes the integrity of declarative configuration, isolation between workloads, and sensitive data such as secrets or credentials \cite{Moric2025KubernetesSecurity}. Once initial access to the control plane is gained, attackers are assumed to be able to deploy and modify workloads and influence the cluster behavior through legitimate API operations.
 
-This analysis emphasizes configuration-driven attacks paths and security risks that are fundamental to Kubernetes orchestration and does not consider attacks targeting new underlying infrastructure, hardware, kernel vulnerabilities or cloud provider services. However, it does include misconfiguration driven isolation (e.g. privileged pods, hostPath mounts, hostNetwork and excessive Linux Capabilities) because these are controlled by Kubernetes configuration and are common in real deployments.
+This analysis emphasizes configuration-driven attacks paths and security risks that are fundamental to Kubernetes orchestration and does not consider attacks targeting new underlying infrastructure, hardware, kernel zero-day vulnerabilities or cloud provider services. However, it does include misconfiguration driven isolation (e.g. privileged pods, hostPath mounts, hostNetwork and excessive Linux Capabilities) because these are controlled by Kubernetes configuration and are common in real deployments \cite{Moric2025KubernetesSecurity}.
 
 
 %SECTION 3
@@ -114,59 +118,60 @@ Despite its wide adoption and powerful capabilities, Kubernetes introduces a num
 
 \subsection{Container and Configuration Challenges}
 
-One of the biggest security challenges with Kubernetes is the complexity of its configuration models. Kubernetes depends on declarative configuration files, which are files where you tell the system what you want it to look like, rather than what to do. While this enables automation and scalability, it also makes mistakes more likely. To prevent security issues, administrators have to correctly configure parameters authentication, networking, storage and workload isolation.
+One of the biggest security challenges in Kubernetes is the complexity of its configuration model. Kubernetes depends on declarative configuration files, which are files where you tell the system what you want it to look like, rather than step-by-step procedures. While this enables automation and scalability, it also makes mistakes more likely. To prevent security issues, administrators have to correctly configure parameters, authentication, networking, storage and workload isolation.
 
-In real-deployments, misconfigurations such as giving too many permissive RBAC roles, unsecured API endpoints, privileged containers, or setting up service accounts incorrectly are common. These misconfigurations can grant users or workloads excessive access, enabling attackers to escalate privileges and gain control of cluster resources. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
+In real-deployments, misconfigurations like as giving too many permissive RBAC roles, unsecured API endpoints, privileged containers or setting up service accounts incorrectly are common. These misconfigurations can grant users or workloads excessive access, enabling attackers to escalate privileges and gain control of cluster resources. Studies have demonstrated that many Kubernetes security challenges are not caused by unknown vulnerabilities, but by insecure default settings and configurations \cite{Moric2025KubernetesSecurity}.
 
-In addition to configuration complexity, Kubernetes security faces challenges in secrets management and supply chain integrity. By default, Secret objects are stored in etcd and encryption is not enabled unless administrators configure it. Additionally secret values are represented using base64 encoding, but base64 is not encryption and does not provide confidentiality. As a result identities or workloads with appropriate RBAC permission (e.g. the ability to read Secret object or mount them into pods) can expose sensitive data. This increases the risk of exposure through misconfiguration or abuse. Similarly, container images sourced from untrusted sources may contain vulnerabilities or malicious code, allowing compromised workloads to be deployed directly into the cluster.
+In addition to configuration complexity, Kubernetes security faces challenges in secrets management and supply chain integrity. By default, Secret objects are stored in etcd and encryption is not enabled unless administrators configure it. Additionally secret values are represented using base64 encoding, but base64 is not encryption and does not provide confidentiality. Any identities or workloads with appropriate RBAC permission (e.g. the ability to read Secret object or mount them into pods) can expose sensitive data. This increases the risk of exposure through misconfiguration or abuse. Similarly, container images sourced from not trusted sources may contain vulnerabilities or malicious code, allowing compromised workloads to be deployed directly into the cluster \cite{Moric2025KubernetesSecurity}.
 
 
 \subsection{Kubernetes Control Plane and API Attack Surface}
 
 For attackers the Kubernetes control plane is a high-value target due to its central role in managing clusters and workload scheduling. The Kubernetes API manages all clusters and allows creating, modifying and deleting resources. If the API access control are not properly restricted, it may allow access to attackers to abuse legitimate API calls to control workloads or manipulate cluster configuration.
 
-Despite the fact that Kubernetes uses authentication and authorization mechanism, the API is still a critical attack surface. In some situations authenticated users with limited privileges can still misuse advanced configuration options to cause it to behave unintended. A significant amount of vulnerabilities and misconfigurations are exercised through API specific features rather than the entire resources, this makes it difficult to control API access using the traditional access control methods. Because the traditional access controls are broad it's hard to allow access and block others at a detailed level \cite{Cesarano2025KubeFence}.
+Despite the fact that Kubernetes uses authentication and authorization mechanism, the API is still a critical attack surface. In some situations authenticated users with limited privileges can still misuse advanced configuration options to cause it to behave unintended. A significant amount of vulnerabilities and misconfigurations are exercised through API specific features rather than the entire resources. This makes it difficult to control API access using the traditional access control methods. Because the traditional access controls are broad, its hard to allow access and block others at a detailed level \cite{Cesarano2025KubeFence}.
 
 
 \subsection{Limitations of Role-Based Access Control and Static Access Control}
 
 Role-based access control is the primary authorization mechanism used in Kubernetes to regulate access to cluster resources. The RBAC policies specify which users or services that can perform actions on the Kubernetes resources such as pods, deployment or services. While the role-based access control provides a clear and standardized approach to access control, it has limitations in managing access in complex and rapidly changing Kubernetes environment.
 
-A key limitation of RBAC is that it grants broad permission, without fine control over every possible action. RBAC policies decide what kind of resources (pods, deployment or service) a user can access and what actions they can perform on them like (create, delete and modify). But it does not control the small details inside the resources such as the specific configuration option a user can choose. Users with permission to create or modify resources can misuse advanced configuration options (e.g. privileged pods or host access) to gain higher-level privileges or bypass isolation
+A key limitation of RBAC is that it grants broad permission, without fine control over every possible action. RBAC policies decide what kind of resources (pods, deployment or service) a user can access and what actions they can perform on them like (create, delete and modify). But it does not control the small details inside the resources such as the specific configuration option a user can choose. Users with permission to create or modify resources can misuse advanced configuration options (e.g. privileged pods or host access) to gain higher-level privileges or bypass isolation \cite{Cesarano2025KubeFence}.
 
-RBAC is also a static access control, meaning it does not adapt to changes in workload behavior, allowing compromised workloads to continue operating with granted permission. Since Kubernetes environment is dynamic, workloads are being created, scaled and removed constantly and because RBAC is a fixed, the policies cannot respond to unusual activity or misuse of granted permission at runtime. This limits its effectiveness against compromised workloads trusted users who misuse their small permissions to cause problems.
+RBAC is also a static access control, meaning it does not adapt to changes in workload behavior, allowing compromised workloads to continue operating with granted permission. Since Kubernetes environment is dynamic, workloads are being created, scaled and removed constantly and because RBAC does not, the policies cannot respond to unusual activity or misuse of granted permission during runtime. This limits its effectiveness against compromised workloads or trusted users who misuse their small permissions to cause problems.
 
 At a scale, managing these RBAC policies introduces operational challenges. To balance between security and usability when defining roles, administrators often grant people more access than they need to avoid slowing down development, which increases attack surface and weakens the clusters overall security. Recent studies \cite{Cesarano2025KubeFence} have highlighted the limitation of RBAC as a standalone defense mechanism, so additional approaches are needed to provide finer control when workloads are running.
 
 
 \subsection{Common Attack Paths in Kubernetes Deployment}
+\label{sec:attack-paths}
+\newcounter{attackpath}
+These are some of the common attack paths observed in Kubernetes deployment, which are a result of misconfiguration, excessive permission or insufficient validation of workloads and dependencies. Common path include:
 
-These are some of the common attack paths observed in Kubernetes deployment, which are as a result from misconfiguration, excessive permission or insufficient validation of workloads and dependencies. Common path include:
+\subsubsection{Exposed endpoint $\rightarrow$ credential access $\rightarrow$ API takeover (Exposure)}
+\label{ap:Exposure}
+    
+Kubernetes components such as the API server, Dashboard or kubelet, may serve as an initial entry point (e.g. through leaked tokens or misconfigured access control). The attackers then use the legitimate API calls to discover resources, identify service accounts and move towards higher-privilege identities.
 
-\begin{itemize}
-    
-    \item \textbf{Exposed endpoint -> credential access -> API takeover:}
-    
-    Kubernetes components such as the API server, Dashboard or kubelet, may serve as an initial entry point (e.g. through leaked tokens or misconfigured access control). The attackers then use the legitimate API calls to enumerate resources, identify service accounts and escalate toward higher-privilege identities.
-    
-    \item \textbf{Overprivileged service account -> workload modification -> privilege escalation}
+\subsubsection{Overprivileged service account $\rightarrow$ workload modification $\rightarrow$ privilege escalation (Escalation)}
+\label{ap:Escalation}
 
-    A  pod with overprivileged service account can be compromised through vulnerable application or malicious image. Attackers can leverage these permissions to create or update workloads. If a pod with high-risk options such as privileged mode, hostPath, hostNetwork or additional Linux capabilities is compromised, it can weaken container isolation and allow the attacker to access host mode, control other pods or escalate to cluster-wide control.
-    
-    \item \textbf{RBAC permission for workload creation/update -> persistence via controller:}
+A  pod with overprivileged service account can be compromised through vulnerable application or malicious image. Attackers can leverage these permissions to create or update workloads. If a pod with high-risk options such as privileged mode, hostPath, hostNetwork or additional Linux capabilities is compromised, it can weaken container isolation and allow the attacker to access host mode, control other pods or move to cluster-wide control.
+ 
+\subsubsection{RBAC permission for workload creation/update $\rightarrow$ persistence via controller (Persistence):}
+\label{ap:Persistence}
 
-    Even without cluster-admin rights, RBAC policies that allow th ability to control or update controller resources can be highly dangerous. Since controller enforce their desired state, meaning any malicious pods they manage can will be automatically recreated if removed.
-    
-    
-    \item \textbf{Excessive access to secrets -> lateral movement}
+Even without cluster-admin rights, RBAC policies that allow the ability to control or update controller resources can be highly dangerous. Since controller enforce their desired state, it means any malicious pods they manage will be automatically recreated if removed.
 
-    Permission to read Secrets or indirect access via controllers that can mount Secrets,   enables attackers credential theft. These credentials can then be used to impersonate service accounts, access other namespaces or expand into external systems.
-    
-    \item \textbf{Supply chain compromise -> malicious image/config -> cluster execution}
+\subsubsection{Excessive access to secrets $\rightarrow$ lateral movement (Secrets):}
+\label{ap:Secrets}
 
-    Kubernetes deployment depends on third-party container images, Helm charts or operator configurations. When these components are obtained through unverified sources or deployed without proper validation, they may contain malicious code or unsafe settings. These workloads run with legitimate permission inside the cluster, which makes detection and response more challenging.
-    
-\end{itemize}
+Permission to read Secrets or indirect access via controllers that can mount Secrets,   enables attackers credential theft. These credentials can then be used to impersonate service accounts, access other namespaces or expand into external systems.
+ 
+\subsubsection{Supply chain compromise $\rightarrow$ malicious image/config $\rightarrow$ cluster execution (Supply Chain)}
+\label{ap:SupplyChain}
+
+Kubernetes deployment depends on third-party container images, Helm charts or operator configurations. When these components are obtained through unverified sources or deployed without proper validation, they may contain malicious code or unsafe settings. These workloads run with legitimate permission inside the cluster, which makes detection and response more challenging.
 
 
 %SECTION 4
@@ -174,13 +179,13 @@ These are some of the common attack paths observed in Kubernetes deployment, whi
 
 \section{Security Hardening and Defense Strategies}
 
-The security challenges described earlier have led to many strategies designed to improve security of containerized and Kubernetes environment. With recent studies demonstrating that relying on a single security mechanism is insufficient and requires the combination of preventive hardening, runtime and attack surface reduction. In this section we will review the security approaches focused on the control plane and workload hardening, behavioral monitoring and detailed API access control and demonstrating that they are complementary and not mutually exclusive.
+The security challenges described earlier have led to many strategies designed to improve security of containerized and Kubernetes environment. In this section we will review the security approaches focused on the control plane and workload hardening, behavioral monitoring and detailed API access control and demonstrate that they are complementary and not mutually exclusive.
 
 \subsection{Control Plane and Workload Hardening}
 
 A popular approach to improving Kubernetes security focuses on strengthening the control plane by applying safe default configuration. The research by \cite{Moric2025KubernetesSecurity} highlights that the primary security problems stems from misconfiguration and insecure defaults rather than unknown vulnerabilities. They emphasize on security hardening by focusing on key components like the API servers, etcd, node services and making sure Kubernetes setup complies with established security guidelines.
 
-Control plane hardening involves measures such as securing API communication using strong authentication and encryption, limiting access to etcd, applying least-privilege RBAC policies and turning off insecure and unnecessary features. At the workload level, hardening practices involve limiting container privileges, avoiding privileged containers, enforcing non-root execution and properly configuring network policies.
+Control plane hardening involves measures such as securing API communication using strong authentication and encryption, limiting access to etcd, applying least-privilege RBAC policies and turning off insecure and unnecessary features. At the workload level, hardening practices involve limiting container privileges, avoiding privileged containers, enforcing non-root execution and properly configuring network policies \cite{Moric2025KubernetesSecurity} .
 
 This approach improves the overall Security of Kubernetes clusters by reducing the likelihood of a successful attack caused by misconfiguration. However, it relies heavily on administrators applying correct and consistent configuration and does not protect runtime attacks or misuse of legitimate permission once workloads are deployed.
 
@@ -188,7 +193,7 @@ This approach improves the overall Security of Kubernetes clusters by reducing t
 
 While the static hardening reduces the attack surface, it is insufficient at detecting attacks that occur during runtime, especially in highly dynamic Kubernetes environment. To address this limitation studies \cite{Chen2025ShadowKube} have proposed a behavioral monitoring approach that focuses on detecting unusual workload behavior instead of relying only on predefined rules.
 
-Their approach, ShadowKube works by learning normal behavioral patterns of Kubernetes workloads and integrates honeypot-based deception mechanisms to identify malicious activity. By observing when workloads act differently from their expected behavior, the system can detect compromised containers or unauthorized actions that static security might miss. The use of honeypot would also allow the system to analyze attack behavior, improving detection accuracy.
+Their approach, ShadowKube, works by learning normal behavioral patterns of Kubernetes workloads and integrates honeypot-based deception mechanisms to identify malicious activity. By observing when workloads act differently from their expected behavior, the system can detect compromised containers or unauthorized actions that static security might miss. The use of honeypot would also allow the system to analyze attack behavior, improving detection accuracy \cite{Chen2025ShadowKube}.
 
 Runtime monitoring improves security by making it possible to detect attacks that exploit legitimate access or occur after deployment. However, such approaches introduce operational complexity and may cause additional performance cost. In addition, defining accurate behavioral baseline is difficult in diverse and evolving environments and poorly managed false positives can impact usability.
 
@@ -196,7 +201,7 @@ Runtime monitoring improves security by making it possible to detect attacks tha
 
 To further enhance Kubernetes security, the API attack surface must be reduced. Researchers \cite{Cesarano2025KubeFence} argue that the Kubernetes role-based access control is too broad for adequately protecting the API, since it does not restrict how configuration fields within the resources are used. This allows attackers to exploit advanced API features to escalate privileges or weaken isolation, while operating within the boundaries of assigned permission.
 
-To address these issues, they proposed an API filtering that ensures workloads can only access the API features they need. The system analyzes trusted application configurations to create safe API policies. These configurations can include Kubernetes Operators, which are programs that help manage and automate applications on the clusters, as well as Helm Charts, which are templates that define how applications should be deployed. By analyzing these, the system can block unnecessary or risky API features while still letting normal workloads run correctly, reducing the attack surface attackers can misuse through the API.
+To address these issues, they proposed an API filtering that ensures workloads can only access the API features they need. The system analyzes trusted application configurations to create safe API policies. These configurations include Kubernetes Operators, which are programs that help manage and automate applications on the clusters, as well as Helm Charts, which are templates that define how applications should be deployed. By analyzing these, the system can block unnecessary or risky API features while still letting normal workloads run correctly, reducing the attack surface attackers can misuse through the API \cite{Cesarano2025KubeFence}.
 
 The API attack surface reduction strengthens Kubernetes security by enforcing the principle of least privilege with more detailed control than traditional RBAC. However, it depends on precise workload information and adds extra policy management that needs to be handled alongside existing RBAC rules.
 
@@ -208,27 +213,27 @@ The security approaches discussed in the previous sections addresses Kubernetes 
 
 \subsection{Comparison of Security Posture}
 
-Control plane and workload hardening, as presented in "Security Hardening and compliance assessment of Kubernetes control plane and workloads" \cite{Moric2025KubernetesSecurity}, primarily strengthens Kubernetes by reducing the risk of misconfigurations and insecure defaults. This approach prevents common configurations based attacks and lays the foundation for strong security. In terms of attack path in Section 3.4, hardening is most effective way to reduce both the likelihood and impact of (API takeover) by enforcing secure control plane settings. It also mitigates (Privilege escalation) by limiting privileged pods settings, host access and dangerous defaults. However, the problem is that it assumes that administrators have correctly applied and maintain hardening policies over time, since once the workload is deployed, static hardening provides limited protection against attack that exploit legitimate permissions or occur during runtime.
+Control plane and workload hardening, as presented in "Security Hardening and compliance assessment of Kubernetes control plane and workloads" and it primarily strengthens Kubernetes by reducing the risk of misconfigurations and insecure defaults \cite{Moric2025KubernetesSecurity}. This approach prevents common configurations based attacks and lays the foundation for strong security. In terms of attack paths in section \ref{sec:attack-paths}, hardening is an effective way to reduce both the likelihood and impact of attack path Exposure ~\ref{ap:Exposure} by enforcing secure control plane settings. It also mitigates Escalation \ref{ap:Escalation} by limiting privileged pods settings, host access and dangerous defaults. However, the problem is that it assumes that administrators have correctly applied and maintain hardening policies over time, since once the workload is deployed, static hardening provides limited protection against attack that exploit legitimate permissions or occur during runtime.
 
-Runtime monitoring approaches, such as the one proposed in "Shadowkub: Enhancing Kubernetes security with behavioral monitoring and honeypot integration" \cite{Chen2025ShadowKube}, strengthen security by detecting malicious behavior that bypass static defenses. Through continuous monitoring of workload behavior and anomaly detection, runtime defenses can uncover compromised containers or unauthorized activity even when attackers operate within granted permission. This is extremely relevant for (Persistance via controller) and (Lateral movement) where it detects when malicious controller or pods behave abnormally and when credentials are used in unusual access patterns. The approach is effective against runtime threats and activities following post-compromise, however it does not prevent misconfiguration or reduce the exposed attack surface before deployment.
+Runtime monitoring approaches, such as the one proposed in "Shadowkub: Enhancing Kubernetes security with behavioral monitoring and honeypot integration" \cite{Chen2025ShadowKube}, strengthen security by detecting malicious behavior that bypass static defenses. Through continuous monitoring of workload behavior and anomaly detection, runtime defenses can uncover compromised containers or unauthorized activity even when attackers operate within granted permission. This is extremely relevant for attack paths such as Persistence \ref{ap:Persistence} and Secrets \ref{ap:Secrets}, where it detects when malicious controller or pods behave abnormally and when credentials are used in unusual access patterns. The approach is effective against runtime threats and activities following post-compromise, however it does not prevent misconfiguration or reduce the exposed attack surface before deployment.
 
-API attack surface reduction, presented in "Kubefence: Security hardening of Kubernetes attack surface" \cite{Cesarano2025KubeFence}, enhances security by reducing what attackers can do from the start. By enforcing strict restrictions on API usage, this approach reduces attack paths and mitigates both misconfiguration and certain vulnerabilities. This approach is important for (Privilege escalation) and (Persistence via controller) where this approach blocks high-risk API fields and operations that enable privileged pods, unsafe mounts or controller misuse, even when the caller has some RBAC permissions. Additionally, it can, reduce the impact of (Cluster execution) by restricting risky API fields and operations used to deploy and modify workloads. Its effectiveness depends on accurately understanding workload behavior to generate correct polices, offering stronger preventive protection than traditional RBAC.
+API attack surface reduction, presented in "Kubefence: Security hardening of Kubernetes attack surface" \cite{Cesarano2025KubeFence}, enhances security by reducing what attackers can do from the start. By enforcing strict restrictions on API usage, this approach reduces attack paths and mitigates both misconfiguration and certain vulnerabilities. This approach is important for Escalation \ref{ap:Escalation} and Persistence \ref{ap:Persistence} where this approach blocks high-risk API fields and operations that enable privileged pods, unsafe mounts or controller misuse, even when the caller has some RBAC permissions. Additionally, it can reduce the impact of Supply Chain \ref{ap:SupplyChain} by restricting risky API fields and operations used to deploy and modify workloads. Its effectiveness depends on accurately understanding workload behavior to generate correct polices, offering stronger preventive protection than traditional RBAC.
 
 Together, these approaches strengthen the overall security: 
 \begin{itemize}
-    \item Hardening: Reduces misconfiguration risk, relevant for API takeover and privilege escalation.
-    \item Runtime monitoring: Detects and respond to ongoing attacks, relevant for persistence via controller and cluster execution.
-    \item API filtering: Limits exploitable functionalities once inside, relevant for privilege escalation and persistance via controller.
+    \item Hardening: Reduces misconfiguration risks, relevant for exposure and escalation.
+    \item Runtime monitoring: Detects and responds to ongoing attacks, relevant for persistence and execution.
+    \item API filtering: Limits exploitable functionalities once inside, relevant for escalation, persistence and supply chain.
 \end{itemize}
 
 
 \subsection{Operational and Security cost considerations}
 
-From an operational view, control plane and workload hardening have little impact on performance cost, as they rely mainly on preconfigured settings. However, the operational burden placed on the administrators is significant, since maintaining secure configurations across multiple evolving clusters requires continuous effort and expertise. 
+From an operational view, control plane and workload hardening have little impact on performance cost, as they rely mainly on preconfigured settings \cite{Moric2025KubernetesSecurity}. However, the operational burden placed on the administrators is significant, since maintaining secure configurations across multiple evolving clusters requires continuous effort and expertise. 
 
-Building on this, runtime monitoring introduce complexity since they require continuous observation, data collection and analysis. Techniques such as behavioral monitoring and honeypot may increase system load and require fine-tuning to prevent false positives. The security benefits often outweigh the system load in this case, although for large or resource limited systems it becomes harder to manage.
+Building on this, runtime monitoring introduce complexity since they require continuous observation, data collection and analysis. Techniques such as behavioral monitoring and honeypot may increase system load and require fine-tuning to prevent false positives. The security benefits often outweigh the system load in this case, although for large or resource limited systems it becomes harder to manage \cite{Chen2025ShadowKube}.
 
-In combination with runtime monitoring and workload hardening, API attack surface reduction provides a layered security approach. By limiting exposed API surface and applying least-privilege access, the potential damage from successful attacks is reduced even after initial compromise. This means that while runtime performance impact is low, the effectiveness of this approach depends on the accuracy of the policies as incorrect or misconfigured polices could disrupt workloads or weaken the security.
+In combination with runtime monitoring and workload hardening, API attack surface reduction provides a layered security approach. By limiting exposed API surface and applying least-privilege access, the potential damage from successful attacks is reduced even after initial compromise. This means that while runtime performance impact can be managed through efficient policy implementation, the effectiveness of this approach depends on the accuracy of the policies as incorrect or misconfigured polices could disrupt workloads or weaken the security \cite{Cesarano2025KubeFence}.
 
 \subsection{Complementary Defense Strategies}
 
@@ -254,31 +259,33 @@ This research indicates that future security development should focus on automat
 
 Runtime monitoring and behavioral detection mechanism play an important role for finding attacks that occur after the application is deployed, especially attacks that evade static defenses or exploit legitimate permissions. Approaches such as behavioral monitoring and deception-based technique have proven useful for detecting compromised workloads and unauthorized actions in Kubernetes environment \cite{Chen2025ShadowKube}.
 
-However, it has been difficult to define what "normal" behavior looks like, due to the highly dynamic nature of container workloads. Scaling, updating and redeployment can cause normal activity to seem suspicious, leading to false alarms. In large monitoring, constant monitoring can also create extra load and make the system more difficult to manage.
+However, it has been difficult to define what normal behavior looks like, due to the highly dynamic nature of container workloads. Scaling, updating and redeployment can cause normal activity to seem suspicious, leading to false alarms. In large monitoring, constant monitoring can also create extra load and make the system more difficult to manage.
 
-Future research should focus on runtime detection technique that can adapt to changes in workload behavior while maintaining low false positives. Using behavioral analysis with selective monitoring of high-risk areas in Kubernetes, may help improve detection without hurting scalability and system manageability.
+Future research should focus on runtime detection techniques that can adapt to changes in workload behavior while maintaining low false positives. An open research challenge is whether behavioral analysis with selective monitoring of high-risk areas in Kubernetes may help improve detection accuracy without hurting scalability and system manageability \cite{Chen2025ShadowKube}.
 
 \subsection{Detailed Policy Control and Updating}
 
 Controlling API Access control in detail and reducing the  attack surface represents strategies for limiting what attackers can exploit in Kubernetes. The traditional role-based access control is too general to effectively protect sensitive API features, motivating approaches that enforce more precise constraint on resource configuration \cite{Cesarano2025KubeFence}.
 
-A major challenge is maintaining accurate and up-to-date policies as workload change. Policies created from the initial application configurations may become outdated as applications are updated, scaled or reconfigured. If policies are not regularly updated, access control may either allow too much or interfere with normal operations.
+A major challenge is maintaining accurate and up-to-date policies as workload change. Policies created from the initial application configurations may become outdated as applications are updated, scaled or reconfigured. If policies are not regularly updated, access control may either allow too much or interfere with normal operations \cite{Cesarano2025KubeFence}.
 
-Future research should explore ways to update policies as workloads change. It's important that these access control remain aligned with the application while maintaining security.
+Future research should explore ways to update policies as workloads change. Its important that these access control remain aligned with the application while maintaining security.
 
 \subsection{Security for shared and large clusters}
 
-As more teams and organizations use Kubernetes, cluster are increasingly shared, making security failures more serious. In these shared environments, misconfiguration or compromised workloads can affect multiple users if proper isolation isn't in place.
+As more teams and organizations use Kubernetes, cluster are increasingly shared, making security failures more serious \cite{Moric2025KubernetesSecurity}. In these shared environments, misconfiguration or compromised workloads can affect multiple users if proper isolation isn't in place \cite{Cesarano2025KubeFence}.
 
-Existing isolation mechanisms, such as namespaces and network policies, provide basic protection but have limitations. Namespaces create separate virtual spaces within clusters, allowing for resources like pods and services to be logically separated for different teams or application. Network policies define rules for how pods can communicate with each other and with external network, helping prevent unauthorized access between workloads. Runtime monitoring detects unusual behavior as application run and the detailed API restrictions limit what actions users or services can perform. While these measures help, more robust security for shared and large clusters are needed to ensure that breaches in one part of the cluster do not affect the other users.
+Existing isolation mechanisms, such as namespaces and network policies, provide basic protection but have limitations \cite{Moric2025KubernetesSecurity}. Namespaces create separate virtual spaces within clusters, allowing for resources like pods and services to be logically separated for different teams or application. Network policies define rules for how pods can communicate with each other and with external network, helping prevent unauthorized access between workloads.
 
-Future researcher should look at better isolation techniques and multi-user security that work with Kubernetes and provide stronger protection in shared environments.
+Runtime monitoring detects unusual behavior as application run and the detailed API restrictions limit what actions users or services can perform \cite{Chen2025ShadowKube}. While these measures help, more robust security for shared and large clusters are needed to ensure that breaches in one part of the cluster do not affect the other users.
+
+Future challenges to evaluate are better isolation techniques and multi-user security that work with Kubernetes and provide stronger protection in shared environments.
 
 \subsection{Unified and Multi-Layered Security}
 
-The recent researches have one thing in common, no single security measure can fully protect Kubernetes. Hardening the control plane helps prevent misconfiguration, runtime monitoring catches attacks after deployment and API filtering limits exploitable functionality. But since these tools are often deployed independently it limits their overall effectiveness.
+The recent researches have one thing in common, no single security measure can fully protect Kubernetes \cite{Moric2025KubernetesSecurity} \cite{Chen2025ShadowKube} \cite{Cesarano2025KubeFence}. Hardening the control plane helps prevent misconfiguration, runtime monitoring catches attacks after deployment and API filtering limits exploitable functionality. But since these tools are often deployed independently it limits their overall effectiveness.
 
-Future Kubernetes framework should aim to integrate preventive, detective and restrictive controls into a single system. This would let the different security measures to share information, improving detection accuracy and response effectiveness. However creating a framework that is both strong and easy while avoiding excessive complexity is still a major challenge. 
+Future Kubernetes framework should aim to integrate preventive, detective and restrictive controls into a single system. This would let the different security measures to share information, improving detection accuracy and response effectiveness. However creating a framework that is both strong and easy while avoiding excessive complexity is still a major challenge \cite{Chen2025ShadowKube} \cite{Cesarano2025KubeFence}. 
 
 % SECTION Conclusion
 
@@ -295,7 +302,7 @@ In conclusion, protecting Kubernetes-based systems remains challenging but essen
 \vspace{-12pt}
 
 \bibliographystyle{ieeetr}
-\bibliography{Ref}
+\bibliography{Project/Paper}
 
 
 
@@ -305,107 +312,163 @@ In conclusion, protecting Kubernetes-based systems remains challenging but essen
 \part{- Case Study: Security Design for Healthcare Systems}
 \setcounter{section}{0}
 
+% Task 1
 
 
 \section{System Description and Security Need}
-In this part of the thesis, which is a case study, we have chosen to focus on the Electronic Health Record (EHR) system designed for a regional hospital. This is a digital platform for collecting and storing patient health information across different treatment sites and clinical departments. The main purpose of such a system is to provide healthcare professionals with secure and rapid access to critical patient information, including medical records, lab results, X-rays and surgical reports. This helps increase patient safety and is more efficient when it comes to interaction between doctors, nurses and other support staff.\\
+In this part of the thesis, which is a case study, we have chosen to focus on the Electronic Health Record (EHR) system designed for a regional hospital. This is a digital platform for collecting and storing patient health information across different treatment sites and clinical departments. The main purpose of such a system is to provide healthcare professionals with secure and rapid access to critical patient information, including medical records, lab results, X-rays and surgical reports. This helps increase patient safety and is more efficient when it comes to interaction between doctors, nurses and other support staff.
 
-The system consists of three main components, these are a client side, an application server and the database, which is built as a distributed architecture. The client side is the workstation in the hospital department, mobile devices used during visits, or protected portals for the benefit of patients. This can be either iPads or computers on trolleys. These are used by the doctor to check blood test results, show X-ray images to the patient or write new medication doses while they are with the patient. Since these devices are mobile, there is also a risk that they can be lost or stolen or that unauthorized persons see the screen. Therefore, there is a need for automatic locking and access filters. The application server is primarily responsible for handling logical operations and requests, while the database is responsible for securing the actual journal data and storing it in an encrypted format.\\
+\subsection{Key Functionality}
+The key functionalities for Electronic Health Record (EHR) includes, clinical documentation, Medication management, result and reporting, Imaging access, orders and task management and lastly Patient portal \cite{NIST80066r2}.
 
-For such a system as the hospital uses, it is important to protect it from threats by implementing security mechanisms related to CIA. They consist of information that is confidentiality, data security (integrity), and ensuring that the system is always usable during critical situations, and that important information is always available to healthcare personnel (availability). Confidentiality is always a major challenge for such a system because the system contains sensitive personal information, it attracts both hackers and creates challenges among personnel when it comes to internal snooping. Integrity is also a critical challenge here, because if information about allergies or medication dosage of a patient is changed by unauthorized persons, it can lead to a direct threat to the patient's life and health. When it comes to emergency situations, accessibility is crucial, especially during such situations where medical care is about getting quick access to the patient's record. The main challenge is to implement the necessary security measures without compromising usability, because if the system becomes too cumbersome, the risk also increases that employees will use unsafe detours to complete their jobs on time.
+\subsubsection{Clinical documentation}
+One of the most important and critical functions of an EHR system is clinical documentation, because it is directly used in diagnosis and treatment selection. If allergy, and diagnostic information or medical assessments are changed by unauthorized persons, this can lead to incorrect treatment and, in the worst case, serious consequences for patient safety. The system must therefore protect high data integrity through role-based access, version control and full traceability of all changes.
 
-\begin{figure}[h!]
+\subsubsection{Medication management}
+Another important and critical function in a hospital system is medication management. This directly affects medication, administration and prescribing. If medication lists are changed incorrectly or by another unauthorized person, there will be a major risk to patient safety. Because it can lead to drug overdose, serious drug interactions or lack of treatment for a patient. In order for the system to be able to prevent this, it must have strict access controls, automated checks for allergies and interactions, and complete traceability of all changes that occur.
+
+\subsubsection{Results and reporting}
+All lab results and clinical observations are collected into the system, which are important and time-critical decisions. The system must guarantee high availability, secure transmission and strict integrity protection against unauthorized data changes, to avoid misdiagnosis and treatment delays.
+
+\subsubsection{Imaging access}
+External systems which the hospital has access to such as PACS and RIS are used to view or integrate X-ray, CT and MRI images, is used for diagnosis and treatment planning. To prevent unauthorized access or data leakage, it is necessary to have a secure integration and strict access control. By using encrypted communication and audit logging, it leads confidentiality, traceability and accountability, when it comes to access to image data that is sensitive.
+
+\subsubsection{Orders and task management}
+An important and central function of the EHR system is the management of clinical orders, which governs the ordering and follow-up of laboratory tests, imaging diagnostics and referrals, among other things. Unauthorized or Incorrect changes to orders can lead to missing or out-of-date examinations and can affect patient safety. The system must therefore implement role-based and context-aware access control and logging of all order actions to protect correct use and accountability.
+
+\subsubsection{Patient portal}
+Through the patient portal, patients will have limited access to their own information such as medical records, test results, etc. and schedules, there will always be a risk of unauthorized access. This can lead to dangerous privacy breaches if access control and authentication are not protected to a certain extent. Therefore, it is important that the system uses recommended strong mechanisms based on authentication and controlled access. The system must therefore implement secure identity solutions and data minimization, to protect that patients only see their own necessary information.
+
+
+
+\begin{figure}[!h]
     \centering
     % Her setter vi bredden til 100% og høyden til maks 8cm
     \includegraphics[width=0.9\linewidth, height=8cm, keepaspectratio]{Project/Images/image.png}
     \caption{System Architecture and Security Mechanisms}
-    \vspace{10pt} % Gir litt avstand mellom bildet og forklaringen
     \small % Gjør forklaringsteksten litt mindre enn brødteksten for bedre layout
-    As illustrated in Figure \ref{fig:architecture}, the security is built as a layered defense. I have chosen to implement a \textbf{Secure Zone} (dashed area) to isolate the most critical system components from the open network. The diagram also demonstrates the \textbf{negative logic} of the system; for instance, if a user provides an incorrect password or MFA code, the request is terminated at the border of the secure zone. This acts as a barrier that prevents unauthorized traffic from reaching the application logic or database, effectively reducing the risk of attacks such as SQL injections or unauthorized access.
+    As illustrated in Figure \ref{fig:architecture}, the security is built as a layered defense. I have chosen to implement a \textbf{Secure Zone} (dashed area) to isolate the most critical system components from the open network. The diagram also demonstrates the \textbf{negative logic} of the system; for instance, if a user provides an incorrect password or MFA code, are stopped at the secure zone. This acts as a barrier that prevents unauthorized traffic from reaching the application logic or database. Attack such as SQL injections are mitigated through input validation or least-privilege database accounts.
     \label{fig:architecture}
 \end{figure}
 
-\section{Identity Management }
-In a modern healthcare system, identity management is the foundation of security. It is more than just a username or password. It is a framework for protecting the right people from accessing the necessary technological resources at the right time and for the right reasons. Confidentiality is critical in an environment like a hospital, so it is crucial to have effective identity management to prevent both external attacks and internal snooping.
+\subsection{Component}
+The system consists of three main components, these are a client side, an application server and the database, which is built as a distributed architecture. The client side is the workstation in the hospital department, mobile devices used during visits, or protected portals for the benefit of patients. This can be either iPads or computers on trolleys. These are used by the doctor to check blood test results, show X-ray images to the patient or write new medication doses while they are with the patient. Since these devices are mobile, there is also a risk that they can be lost or stolen or that unauthorized persons see the screen. Therefore, there is a need for automatic locking and access filters. The application server is primarily responsible for handling logical operations and requests, while the database is responsible for securing the actual journal data and storing it in an encrypted format \cite{NIST80066r2}.
+
+\subsection{Security Needs and Challenges}
+For such a system as the hospital uses, it is important to protect it from threats by implementing security mechanisms related to CIA. They consist of information that is confidentiality, data security (integrity), and ensuring that the system is always usable during critical situations, and that important information is always available to healthcare personnel (availability). Confidentiality is always a major challenge for such a system because the system contains sensitive personal information, it attracts both hackers and creates challenges among personnel when it comes to internal snooping. Integrity is also a critical challenge here, because if information about allergies or medication dosage of a patient is changed by unauthorized persons, it can lead to a direct threat to the patient's life and health. When it comes to emergency situations, accessibility is crucial, especially during such situations where medical care is about getting quick access to the patient's record. The main challenge is to implement the necessary security measures without compromising usability, because if the system becomes too cumbersome, the risk also increases that employees will use unsafe detours to complete their jobs on time \cite{NIST80066r2}.
+
+
+
+% Task 2 
+
+\section{Identity Management}
+Authentication mechanisms are used to verify identity during login, while identity management covers the whole process of controlling a users access rights from the moment they are created, maintenance and until they are removed. In a modern healthcare system, identity management is the foundation of security \cite{NIST80063-4}. It is more than just a username or password, it is a framework that ensures that only authorized individuals can access the necessary sensitive resources when such access is required for legitimate reasons.
+
+Confidentiality is critical in an environment like a hospital, so it is crucial to have effective identity management to prevent both external attacks and internal snooping. Ineffective identity management can result in breaches, insider misuse or unauthorized access that can compromise patient safety.
 
 
 \subsection{Identity lifecycle}
-A user's identity in the system starts long before the actual login and the process consists of three phases (provisioning, maintenance, and deprovisioning).
+A user's identity in the system is established long before the actual login and the process consists of three phases (provisioning, maintenance and deprovisioning) \cite{NIST80063-4}.
 
-Provisioning: When a new doctor or nurse is hired at the regional hospital, their digital identity must be created based on verified data from the human resources (HR) system. A critical part of this process is to bind the identity to the authorization register for healthcare personnel. This means that only those who have been granted approved access also have access to the clinical modules in the EHR system.
+\subsubsection{Provisioning}
+When a new doctor or nurse is hired at the regional hospital, their digital identity must be created based on verified data from the human resources (HR) system. A critical part of this process is to bind the identity to the authorization register for healthcare personnel. This means that only those who have been granted approved access also have access to the clinical modules in the EHR system.
 
-Maintenance: This phase is about access control related to the different roles (RBAC). That is, instead of assigning rights to an individual, the rights are assigned based on roles such as doctor, nurse, or administrative employee. The role determines whether a request to the database is approved as an authorized query, which is also shown in the architecture diagram (fig.1)
+\subsubsection{Maintenance}
+This phase is about access control related to the different roles (RBAC). Identities for employees with admin roles are created through the HR system, but are limited to tasks based on their role, which can include scheduling, billing, and system administration. Users with this type of role will not be able to access clinical patient data, as they pose an elevated risk of insider security incidents. Role-based access management combined with regular access audits is therefore important to ensure that rights remain limited and relevant. instead of assigning rights to an individual, the rights are assigned based on roles such as doctor, nurse, or administrative employee. The role determines whether a request to the database is approved as an authorized query, which is also shown in the architecture diagram (fig.1)\\
 
-Deprovisioning: When working hours are over, it is critical and necessary that access is immediately revoked. Automated deprovisioning prevents ghost accounts, i.e. inactive accounts that can be misused in a possible attack where the attacker can access sensitive data about patients undetected.
+\subsubsection{Deprovisioning}
+The deprovisioning process is initiated for several reasons such as when a user/employee leaves the organization, the role changes or the contract expires. In these cases, accounts will be automatically deactivated, roles that have been assigned will be revoked, credentials will be invalidated and sessions that are active will be terminated to prevent unauthorized access. Automated deprovisioning prevents ghost accounts, i.e. inactive accounts that can be misused in a possible attack where the attacker can access sensitive data about patients undetected.
 
-\subsection{Authentication mechanisms and MFA} As I have illustrated in the diagram (fig.1), everyone must go through an ID Provider before they can access the application server. Authentication is the process of verifying that a person is actually who they claim to be. For hospital systems, multi-factor authentication (MFA) is required to achieve a sufficient level of trust. Two out of three factors are required for multi-factor authentication (MFA).
+\subsection{Authentication mechanisms and MFA}
+As I have illustrated in the diagram (fig.1), everyone must go through an ID Provider before they can access the application server. Authentication is the process of verifying that a person is actually who they claim to be. For hospital systems, multi-factor authentication (MFA) is required to achieve a sufficient level of trust \cite{NIST80063B4}. Two out of four factors are required for multi-factor authentication (MFA).
 
 \begin{itemize}
-    \item Number one is something that only you know, it's a password or pin code.
-    \item Something you always have with you or on you, such as a smart card, physical security key, or code if you use a mobile app that you have access to.
-    \item The last factor is something you are yourself, such as Biometrics (fingerprints) or facial recognition
+    \item \textbf{Something the user knows:} This is information that the user can recall,  such as passwords or PIN.
+    \item \textbf{Something the user has:} This is a physical item that the user possesses, such as smart phone or security key.
+    \item \textbf{Something the user is:} These are inherent characteristics to the user possesses, such as  fingerprints or facial recognition.
+    \item \textbf{Something the user does:} These are behavioural characteristics that are unique to the user, such as voice pattern or handwriting.
 \end{itemize}
 
-The diagram we created (fig 1) where all incorrect attempts will be caught by the negative logic. According to our diagram, the system works like this, if a doctor enters the wrong password or MFA code, the system will send the request back to the start at the border of the secure zone. This means that the person trying to gain access will not be allowed to pass through the secure zone unless they enter the correct password or MFA code. Such a security mechanism is very important and crucial when it comes to hospital systems to be able to prevent and protect against any brute force attacks where hackers try to guess credentials.
-
-\subsection{Authentication strength and trust levels} A system like the hospital's where they handle sensitive personal data, then just logging in is not enough. This is operated at different levels of assurance. For healthcare personnel operating internally, MFA is required. This means that the identity is verified through at least two independent factors, as shown in the diagram under ID Provider. By requiring something the user knows as a password and something the user has such as a physical access card or code chip, the risk of unauthorized access if a password were to be revealed is eliminated. Patients who log in externally use national ID solutions such as BankID, which guarantee the highest level of security (level 4).
+If a user enters the wrong password or an invalid multi-factor authentication (MFA), the authentication attempt is rejected and access is denied. The system follows a deny-principle that means the user is granted access after successful authentication and failed authentication are logged and monitored. This protects against brute-force attacks and password and credential guessing attempt. Additionally, the mechanism is extremely important in hospital setting, where unauthorized access to systems could have serious consequence for patient.
 
 
-\subsection{Access review and audit (Attestation)} Identity management does not end after access is granted. To maintain high-level security over time, the system must include regular access review procedures. This means that department heads at the hospital must periodically verify that their employees still have a business need for the rights they have been granted. For example, if a nurse changes departments from surgery to psychiatry, the existing access should be cleaned up and new rights should be created from scratch. This practice is important and crucial to prevent privilege creep, where over time they accumulate excessively extensive rights. In addition, automated logs of who has accessed different identities are a legal requirement to document compliance with privacy regulations.
+\subsection{Authentication Strength and Trust Levels}
+
+In any environment where there are different user groups, you will require different levels of authentication strength. In a hospital system the same applies, internal healthcare personnel who have access to sensitive information require authentication using MFA to ensure high level of assurance. This ensures that even if one credential is compromised (e.g password) access is still not granted since they would require other factors.
+
+Federated identity providers offer high level of trust and allow Electronic Health Care systems (EHR) to rely on them to store patient credentials. These federated identities such as BankID authenticate patients accessing the electronic health care system. These federated provides reduce administrative cost and limits potential impact of credential compromise while they still provide reliable patient access.
 
 
+\subsection{Access Review and Audit (Attestation)}
+
+Identity management does not end after access is granted. To maintain high-level security over time, the system must include regular access review procedures. This means that department heads at the hospital must periodically verify that their employees still have a business need for the rights they have been granted.
+
+For example, if a nurse changes departments from surgery to psychiatry, the existing access should be cleaned up and new rights should be created from scratch. This practice is important and crucial to prevent privilege creep, where over time they accumulate excessively extensive rights.
+
+In addition, automated logs of who has accessed different identities are a legal requirement to document compliance with privacy regulations. Managing identities from multiple organizations can be challenging, because it requires precise attribute and role mapping to protect the correct access.
+
+Overall, this identity management design supports the practice of least privilege by assigning access rights associated with verified roles and continuously reviewing them throughout the identity lifecycle. Automated provisioning and resolution limits administrative errors, and regular access reviews prevent privilege escalation and ensure that access always reflects current responsibilities
+
+
+% Task 3
 
 
 \section{Access Control Policy}
-A strong Access Control Policy is essential to protect the secure and lawful use of sensitive health information in a regional hospital. While identity management verifies who the user is, this access control defines what that identity actually has access to do in the system. The purpose of this policy is to protect confidentiality, integrity, and availability throughout the patient care process.
+A strong Access Control Policy is essential to protect the secure and lawful use of sensitive health information in a regional hospital. While identity management verifies who the user is, access control defines what the identity actually has access to do in the system. The purpose of this policy is to protect confidentiality, integrity and availability throughout the patient care process.
 
-\subsection{Granting and managing rights (RBAC and ABAC)} A hybrid model is used for this system, which combines Role-Based and Attribute-Based Access Control (RBAC and ABAC).\\
+\subsection{Granting and managing rights (RBAC and ABAC)}
 
-These rights are assigned primarily based on the user's professional roles. This makes it easier for the administration to set rights for roles such as doctor, nurse and administrative staff, rather than managing individual access for each employee. This is also illustrated in the diagram, where any request to the database must be an Authorized query based on these roles.\\
+A hybrid model is used for this system, which combines Role-Based and Attribute-Based Access Control (RBAC and ABAC). The granting of rights are primarily based on the users professional roles. This makes it easier for the administration to set rights for roles such as doctor, nurse and administrative staff, rather than managing individual access for each employee. This is also illustrated in the diagram, where any request to the database must be an Authorized query based on these roles.
 
-To achieve a more detailed level of security, RBAC is added with ABAC principles. This means that the system evaluates attributes such as
+To achieve a more detailed level of security, RBAC is added with ABAC principles \cite{NIST800162}. This means that the system evaluates attributes such as:
+\begin{itemize}
+    \item Time: Access for users is limited to the scheduled shifts they have.
+    \item Location: Access to highly sensitive modules can be limited to the hospitals internal network
+    \item Relationship: The system checks whether there is an active treatment relationship between user and the patient.
+\end{itemize}
 
-• Time: where access to users is limited to the scheduled shifts they have.\\
-• Location: Access to highly sensitive modules can be limited to the hospital's internal network.\\
-• Relationship: The system also checks whether there is an active treatment relationship between the doctor and the patient.
+
 
 \subsection{Specific access rules and examples}
 To follow and ensure the principles of least privilege, specific rules must be established for how different users can interact with data. Here are three key examples:\\
 
-1. A doctor has the rights to read, write and sign medical records, lab results and surgery reports. In contrast, a nurse can only read these documents and record observations such as dispensing medication, but is not authorized to change the doctor's medical assessments or recommend new doses. This applies to clinical documentation.
+\begin{itemize}
+    \item A doctor has the rights to read, write and sign medical records, lab results and surgery reports. In contrast, a nurse can only read these documents and record observations such as dispensing medication, but is not authorized to change the doctors medical assessments or recommend new doses. This applies to clinical documentation.
+    \item When it comes to patient access, a person with the patient role can only read their own health information via secure portals. Access to this is limited to the persons own identity and do not allow any changes to the medical data.
+    \item Those with the admin role only have administrative access to logistics systems and bedside charts, but do not have the technical ability to open the actual medical content of the patient record. This limits the risk of internal snooping into sensitive information.
+\end{itemize}
 
-2. When it comes to patient access, a person with the patient role can only read their own health information via secure portals. These accesses are strictly limited to the person's own identity and do not allow any changes to the medical data.
+\subsection{Handling Exception Scenarios:
+Emergency Overrides ("Break-glass")} In everyday life in hospitals. Situations may arise where the normal access rules can prevent life-saving assistance. To ensure accessibility during situations such as acute incidents, a (Break-glass) mechanism is implemented \cite{NIST80053R5}.
 
-3. Those with the admin role only have administrative access to logistics systems and bedside charts, but do not have the technical ability to open the actual medical content of the patient record. This limits the risk of internal snooping into sensitive information.
-
-\subsection{Handling Exception Scenarios: Emergency Overrides ("Break-glass")} In everyday life in hospitals, situations may arise where the normal access rules can prevent life-saving assistance. To ensure accessibility during situations such as acute incidents, a (Break-glass) mechanism is implemented.
-
-• Authorization for override: Only clinical personnel with a documented requirement to act in emergency situations (doctors and specialist nurses) are granted the rights to activate Break-glass. Personnel such as admin or external users do not have these rights.\\ 
-
-• Conditions of use: This function should only be used when an acute situation exists that threatens life and health, and the patient is not able to give consent, or when the usual treatment relationship is not yet registered in the system, such as upon the arrival of an unconscious patient in the emergency department.
-
-• Security requirements and follow-up: When Break-glass is activated, the user must provide a mandatory written justification in the system before access is opened. A high-priority event log in the system (mandatory logging) is immediately triggered, notifying the security officer or data protection officer. This protects that any use of emergency access can be audited afterwards to confirm that it was justified, this also prevents abuse of this function.
-
-
-\subsection{Access control in practice} In order to achieve more detailed control over patient information, the system must distinguish between different types of data. As shown in the diagram, the architecture consists of a client side, application server and a database. The access control policy ensures that the communication between these layers is strictly regulated\\
-
-• We have (least privilege) where each person is given only the rights necessary for them to be able to perform their job. For example, a doctor at the work station will be able to see X-ray images. While a porter on a mobile device can only see patient names and room numbers.\\ 
-
-• To reduce the risk of internal snooping, it is important to have a strong policy that protects against internal threats. If records or other documents are attempted to be opened by other employees who do not have a business reason to see them, the system will not grant them access based on predefined rules in the secure zone.\\ 
-
-• Since unauthorized changes to medication dosages and allergies can be life-threatening for patients, it is essential to have a strong integrity control policy that helps protect that only personnel with authorized access are allowed to change medication dosages and allergies, which are critical information.
-
-\subsection{Logging and auditing} A necessary requirement for such a policy is that everything that happens must leave a trace. This supports confidentiality and integrity.\\
-
-The system will store all logs in order to be able to look at it later who has read or changed data. When using the Break-glass function (emergency access) that we mentioned earlier, it will trigger a mandatory log that explains why the normal rules were overridden. This leads to the possibility of performing a check afterwards to protect that no one has abused their rights.
+\begin{itemize}
+    \item Authorization for override: Only clinical personnel with a documented requirement to act in emergency situations (doctors and specialist nurses) are granted the rights to activate Break-glass. Personnel such as admin or external users do not have these rights.
+    \item Conditions of use: This function should only be used when an acute situation exists that threatens life and health, and the patient is not able to give consent, or when the usual treatment relationship is not yet registered in the system, such as upon the arrival of an unconscious patient in the emergency department.
+    \item Security requirements and follow-up: When Break-glass is activated, the user must provide a mandatory written justification in the system before access is opened. A high-priority event log in the system (mandatory logging) is immediately triggered, notifying the security officer or data protection officer. This makes sure that any use of emergency access can be audited afterwards to confirm that it was justified, this also prevents abuse of this function.
+\end{itemize}
 
 
+\subsection{Access control in practice}
+In order to achieve more detailed control over patient information, the system must distinguish between different types of data. As shown in the diagram, the architecture consists of a client side, application server and a database. The access control policy ensures that the communication between these layers is strictly regulated
 
+\begin{itemize}
+    \item We have (least privilege) where each person is given only the rights necessary for them to be able to perform their job \cite{NIST80053R5}. For example, a doctor at the work station will be able to see X-ray images. While a porter on a mobile device can only see patient names and room numbers.
+    \item To reduce the risk of internal snooping, it is important to have a strong policy that protects against internal threats. If records or other documents are attempted to be opened by other employees who do not have a business reason to see them, the system will not grant them access based on predefined rules in the secure zone.
+    \item Since unauthorized change to medication dosage and allergies can be life-threatening for patients, it is essential to have a strong integrity control policy that helps protect so that only personnel with authorized access are allowed to change medication dosages and allergies.
+\end{itemize}
+
+
+\subsection{Logging and auditing}
+A necessary requirement for such a policy is that everything that happens must leave a trace \cite{NIST80053R5}. This supports confidentiality and integrity. The system will store all logs so that it can be reviewed later to see who has read or changed data. When using the Break-glass function (emergency access) that we mentioned earlier, it will trigger a mandatory log that explains why the normal rules were overridden. This leads to the possibility of performing a check afterwards to protect that no one has abused their rights.
+
+
+
+% Task 4
 
 \section{Authentication Mechanism} 
-To protect that only authorized users have access to a hospital system that belongs to sensitive resources, a strong authentication mechanism is required. The process of authentication involves validating a declared identity. Different methods are also implemented in the system depending on user groups, location and risk level, to find the right balance between security and efficient workflow.
+To make sure that only authorized users have access to the sensitive resources in the hospital system, a strong authentication mechanism is required. The process of authentication involves validating a declared identity. To find the right balance between security and efficient workflow, different methods are implemented in the system depending on user groups, location and risk level.
 
-\subsection{Healthcare professional authentication (MFA)} It is not enough to just have a username and password for doctors, nurses and other clinical personnel. Therefore, multi-factor authentication – MFA is used. Users must present at least two of the three authentication factors. This can be a smart card (access card) that has an embedded chip, and biometric verification (fingerprint) or something only the user knows such as a personal PIN code.
+\subsection{Healthcare professional authentication (MFA)} It is not enough to just have a username and password for doctors, nurses and other clinical personnel. Therefore, multi-factor authentication (MFA) is used. Users must present at least two of the three authentication factors. This can be a smart card (access card) that has an embedded chip, biometric verification (fingerprint) or something only the user knows such as a personal PIN code. This approach aligns well with established guidelines, which recommend multi-factor authentication using independent authentication factors \cite{NIST80063B4}.
 
 \begin{figure}[h!]
     \centering
@@ -418,74 +481,83 @@ To protect that only authorized users have access to a hospital system that belo
 
 Ease of use can be critical in a busy hospital environment. To prevent staff from having to go through a full MFA process every time they need to check a screen, we are implementing session-based access. Where users, after a full login at the start of their shift, can simply tap their card to quickly unlock workstations, as long as they are within the secure zone of the hospital. This means that security measures are both protected and do not become an obstacle for situations such as emergency patient care.
 
-\subsection{External authentication for patients} For patients to access their own data via a web portal, the challenge is different. The hospital cannot distribute physical cards to all residents (patients). Here, identity federations (as mentioned in task 2) will be used against national ID providers such as BankID or MinID.\\
+\subsection{External authentication for patients}
+For patients to access their own data via a web portal, the challenge is different. The hospital cannot distribute physical cards to all residents (patients). Here, identity federations (as mentioned in task 2) will be used against national ID providers such as BankID or MinID.
 
-This provides a very high level of trust (security level 4), since these providers have already carried out thorough identity checks on the user. By using such a solution that the patient is familiar with, user-friendliness increases while moving the risk of storing sensitive login data out of the hospital's own systems.
+This provides a very high level of trust (security level 4), since these providers have already carried out thorough identity checks on the user. By using a solution that the patient is familiar with, user-friendliness increases while removing the risk of storing sensitive login data out of the hospital's own systems.
 
 \subsection{Risk and mitigation measures}
-No authentication method is completely risk-free, so we need to take into account some of the following threats:\\ 
+No authentication method is completely risk-free, so we need to take into account some of the following threats:
 
-• Credential theft: with traditional password solutions, an attacker can use phishing attacks to steal passwords. The stolen passwords become worthless on their own when we use an MFA solution. Because the attacker must also have access to both physical cards (smart cards/access cards) and the user's fingerprint or face recognition (biometric data) to be successful with the attack.\\
+\begin{itemize}
+    \item Credential theft: With traditional password solutions, an attacker can use phishing attacks to steal passwords. The stolen passwords become worthless on their own when we use an MFA solution. Because the attacker must also have access to both physical cards (smart cards/access cards) and the user's fingerprint or face recognition (biometric data) to be successful with the attack.
+    \item Impersonation: If an employee forgets to log out of a terminal, another can impersonate them. To reduce this risk, we implement automatic timeouts and physical proximity requirements. This means that after the card is read, the card reader will see whether the session is still active or not.
+    \item Encryption: The system uses encrypted channels for all information sent such as TLS 1.3. This ensures that authentications are not intercepted along the way. This also ensures that there is no attack against the system such as a man-in-the-middle attack.
+\end{itemize}
 
-• Impersonation: If an employee forgets to log out of a terminal, another can impersonate them. To reduce this risk, we implement automatic timeouts and physical proximity requirements. This means that after the card is read, the card reader will see whether the session is still active or not.\\
 
-• The system uses encrypted channels for all information sent – TLS 1.3. This ensures that authentications are not intercepted along the way. This also ensures that there is no attack against the system such as a man-in-the-middle attack.
+\subsection{Support for trusted access decisions}
+Once a user is authenticated, the information must be passed on to the rest of the system in a correct manner. This is done by the system creating a digital proof (e.g. JSON Web Token (JWT), which is locked with a digital signature).
 
-\subsection{Support for trusted access decisions}Once a user is authenticated, the information must be passed on to the rest of the system in a correct manner. This is done by the system creating a digital proof, e.g. JSON Web Token – JWT, which is locked with a digital signature.\\
+The token consists of information such as identity and authentication level of the user. 
+When a request is received, the policy enforcement point (PEP) extracts the token and forward relevant information to the policy decision point (PDP), which validates the token signature and evaluates access policies before granting or denying authorization. This way, the systems authorization service can check the signature on the token. The system can then verify with high confidence that the login is genuine and that the information has not been manipulated along the way by a third party. This protects a smooth security chain from login to data authentication, which is a cornerstone of a Zero Trust design \cite{NIST80063B4}.
 
-The token consists of information such as identity and authentication level about the user. The token is automatically sent when the user retrieves information from the database. In this way, the system's authorization service can check the signature on the token. The system can then be absolutely sure that the login is genuine and that the information has not been manipulated along the way by a third party. This protects a smooth security chain from login to data authentication, which is a cornerstone of a Zero Trust design.
+% Task 5
 
 \section{Authorization Framework and Zero Trust}
-In this part of the case study, we will look at how the various security measures we have presented in the previous tasks in Part 2 – identity management, access control and authentication – work together in a modern framework called Zero Trust.
+In this part of the case study, we will look at how the various security measures we have presented in the previous tasks in Part 2 – identity management, access control and authentication – work together in a modern framework called Zero Trust. The goals for this framework is to check that access to sensitive healthcare data is continuously verified, controlled and is resistant to both external attacks and internal misuse.
 
 \subsection{What is Zero Trust?}
-Old IT security often functioned as a (castle or moat) trusting everything inside the hospital walls. In this system, we use the Zero Trust model instead. The main reason here is simple (Never trust anyone, always check).
-This means that even if a doctor is sitting in their own office inside the hospital, the system will not automatically trust them. Every single request to see a patient record must be re-approved. We use these three points from task 2 to achieve these:\\
+Old IT security often functioned as a (castle or moat) trusting everything inside the hospital walls. In this system, we use the Zero Trust model instead. The main reason here is simple (Never trust anyone, always check).This is based on the assumption that no user, device or network location should be trusted by default. This interpretation is of Zero Trust aligns with established guidelines that emphasize continuous verification, least privilege access and the assumption that the network is already compromised. \cite{NIST800207} 
 
-1. Through federated identity we can know exactly who the user is, this was mentioned under task 2 regarding identity.\\ 
+Under the zero trust model, every request to access patient records must be verified and authorized, that includes even if the request originates from within the hospital network. This means that even if a doctor is sitting in their own office inside the hospital, the system will not automatically trust them. Every single request to see a patient record must be re-approved. This approach is implemented through three key mechanism:
 
-2. We are also sure that the user is who they claim to be via MFA (Task 4 – Authentication).\\
+\begin{itemize}
+    \item With federated identity we can know exactly who the user is, it ensures that the user has a unique and verifiable digital identity.
+    \item Through multi-factor authentication (MFA) we can confirm that the user is who they claim to be.
+    \item Access control ensures that users only have access to what is strictly necessary to perform their duties, so called Least Privilege.
+\end{itemize}
 
-3. As mentioned earlier (Task 3 – Access Control) we only grant access to what is strictly necessary, so-called Least Privilege.
 
 \subsection{The interaction between the components}
-We can imagine Zero Trust as a doorman who never sleeps. The following operations occur in the background when a nurse tries to open a patient's medication list on an iPad:\\ 
+We can imagine Zero Trust as a doorman who never sleeps. The following operations occur in the background when a nurse tries to open a patient's medication list on an iPad:
 
-• The system will first check for the digital proof (token) we mentioned in task 4 (identity verification). Is this a valid employee?, and is the signature real?\\
+\begin{itemize}
+    \item The request is first intercepted by Policy Enforcement Point (PEP), which verifies valid authentication token that are issued after successful multifactor-authentication, ensuring that the request originates from a legitimate employee and that the token signature is valid.
+    \item The relevant attributes of the user (e.g. role, user id, department, employee status) are then forwarded to the Policy Decision Point (PDP), where authorization polices are evaluated using attribute-based access control (ABAC).
+    \item The system will not only check for the role such as nurse, it will also be able to see where the iPad is located. Is it the secure zone of the hospital or another place such as an internet cafe? If it is in an unsecured place, access will be blocked (context check).
+    \item "The use of attribute-based access control and context-aware authorization is consistent with newer Zero Trust access control models that emphasize identity centric policy enforcement" \cite{NIST800207A}.
+    \item Based on the attribute, the PDP returns the authorization decision to the PEP. The PEP will then enforce this decision by either granting or denying the request 
+\end{itemize}
 
-• This is where attribute-based control (ABAC) comes in. The system will not only check for the role such as nurse, it will also be able to see where the iPad is located. Is it the secure zone of the hospital or another place such as an internet cafe? If it is in an unsecured place, access will be blocked (context check).\\
-
-• The last part is about policy enforcement, where it will check the rules from task 3. such as does this nurse have a patient relationship with the patient in question right now? If yes, the data is opened. Access will be denied if the requirements are not met. All events will be logged in the system to be able to follow up on suspected snooping.
+The separation of policy enforcement and policy decision reflects the standard set by Zero Trust architecture model. Authorization decisions are centralized and continuously enforcedat enforcement points \cite{NIST800207}
 
 \subsection{Protection of data integrity and confidentiality}
-By using such a framework, we take care of the most important goals that go into information security:\\ 
+By using Zero Trust authorization framework, we take care of the most important goals that go into information security:
 
-• With regard to confidentiality, we use encryption-TLS 1.3 and strict access control, which ensures that sensitive health information does not end up in the wrong hands. Only those who have a business need to have access to see the information.\\
+\begin{itemize}
+    \item With regard to confidentiality, we use encryption-TLS 1.3 and strict access control, which ensures that sensitive health information does not end up in the wrong hands. Only those with verified identity and who have a business need to have access to see the information.
+    \item Regarding integrity, the framework ensures that no one can change medication doses or allergies without having the correct authorizations. All the write operations are required appropriate privileges and are digitally signed and logged. 
+    This will provide reliable audit trail and supports detection and investigation of unauthorized or accidental change.
+\end{itemize}
 
-• Regarding integrity, as we mentioned in task 3, it is ensured that no one can change medication doses or allergies without having the correct authorizations. By using a Zero Trust system, all changes are signed and logged, this way we can always trust that the data in the database is completely correct.
 
 \subsection{Managing risk in a regional perspective}
-Since such a system is for a regional hospital, the risk will be higher because there will be many users and huge amounts of data. A so-called attack surface will be reduced by Zero Trust. If an attacker manages to steal an employee's password, they will still be stopped by the requirements for MFA (physical smart card) or by the system detecting that the login is happening from an unusual location\\
+Since such a system is for a regional hospital, the risk will be higher because there will be many users and huge amounts of data. Zero Trust reduces the risk by assuming breaches can occur and by limiting the potential impact of compromised credentials. If an attacker manages to steal an employee's password, they will still be stopped by the requirements for MFA (physical smart card) or by the system detecting that the login is happening from an unusual location
 
-This framework makes it easier to collaborate with other hospitals. Since we use a so-called token such as JWT and federated identity (BankID/MinID), we can trust identities that come from other trusted sources without having to open our entire system to risk.
+This framework makes it easier to collaborate with other hospitals. Since we use a so-called token such as JWT and federated identity (BankID/MinID), trust is established at the identity level without having to open our entire system to risk.
 
-\subsection{Summary} Zero Trust is not a simple program that you can install, it is a strategy. By combining strict access control guidelines, secure authentication with MFA, and a clean Identity Management, we have built a system that protects patients from both external attacks and internal errors. This protects the technology that helps employees save lives, without security getting in the way of the work they do.
+Zero Trust is not a simple program that you can install, it is a strategy. By combining strict access control guidelines, secure authentication with MFA, and a clean Identity Management, we have built a system that protects patients from both external attacks and internal errors. This protects the technology that helps employees save lives, without security getting in the way of the work they do.
 
+\subsection{Secure Decision Making in Exceptional Cases}
 
+Although the Zero Trust framework enforces strict access during normal operation, it also has to support exceptional situations, such as emergencies, where immediate access to patient records is needed. 
 
+To deal with this issue, the Zero Trust framework includes a controlled emergency access mechanism, referred to as break-glass. The mechanism would allow for authorized staff to temporarily override the access restriction, when an emergency situation is declared. The emergency situation requires strong multi-factor authentication and detailed information of the emergency by the user.
 
+The emergency privileges granted are restricted to the scope of the emergency and with it being temporary, it last the duration of the emergency. All the emergency access situation events have extra logged, including the identity of the user, the data accessed, the reason for the override and duration of the access. These logs will then be reviewed to ensure accountability and to detect potential misuse.
 
-
-
-
-
-
-
-
-
-
-
-
+This ensures that critical emergency situation can continue without compromising security. With this the Zero Trust framework supports decision making both during normal operation and in exceptional cases \cite{NIST800207}.
 
 
 
@@ -500,25 +572,159 @@ This framework makes it easier to collaborate with other hospitals. Since we use
 \part{- VPN Lab (20 points)}
 \setcounter{section}{0}
 
+\section{Overview}
+
+A Virtual Private Network (VPN) allows host that are on a public network to communicate securely as if they were on a private network. In this lab, we will implement a simplified VPN to demonstrate the tunneling mechanism used in VPN systems.
+
+The lab focuses on IP tunneling using the Linux TUN virtual interface and routing without applying encryption. The goal of the lab is to demonstrate how packet is captured, encapsulated, forwarded and delivered through a VPN gateway.
 
 \section{Task 1 – Network Setup}
 
+Downloaded the Labsetup folder, put it in the shared folder and accessed it through the Seed Ubuntu VM. Then i accessed the folder and used the commands dcbuild and dcup as seen in in Figure~\ref{fig:lab1}.
+
+
+The following containers were created to represent the lab topology:
+\begin{itemize}
+\item \textbf{VPN Server (Router)}: \texttt{server-router}
+\item \textbf{Host U (VPN Client)}: \texttt{client-10.9.0.5}
+\item \textbf{Host V (Private Network Host)}: \texttt{host-192.168.60.5}
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{Project/Part 3/Container setup.png}
+\caption{Docker Compose output showing successful creation and startup of the VPN client, VPN server (router), and private network hosts.}
+\label{fig:lab1}
+\end{figure}
 
 
 
-\section{Task 2 – Create and Configure TUN Interface }
+\textbf{Host U Connectivity Tests}
+
+To verify external connectivity, ICMP ping tests were performed from Host U (\texttt{client-10.9.0.5}). As shown in Figure~\ref{fig:lab2}, Host U can successfully communicate with the VPN Server at IP address \texttt{10.9.0.11}. This confirms that connectivity on the simulated Internet network (\texttt{10.9.0.0/24}) is functioning correctly.
+
+However, when Host U attempts to ping Host V (\texttt{192.168.60.5}), the packets are not delivered and result in 100% packet loss. This behavior is expected, since Host V is located inside the private network and is not directly accessible from Host U before a VPN tunnel is established.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-30-28.png}
+\hfill
+\includegraphics[width=0.5\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-30-50.png}
+\caption{ICMP tests from Host U showing successful communication with the VPN Server and failed communication with Host V.}
+\label{fig:lab2}
+\end{figure}
+
+
+\textbf{VPN Server to Host V Connectivity Test}
+
+To verify internal network connectivity, ICMP ping tests were performed from the VPN Server (\texttt{server-router}) to Host V (\texttt{192.168.60.5}). The ping test was successful, confirming that the VPN Server can reach hosts inside the private network. This demonstrates that the router is correctly connected to both networks and can communicate with internal hosts.
+
+(Insert your VPN Server → Host V ping screenshot here)
+
+\textbf{Packet Capture on the VPN Server}
+
+To observe packet flow through the VPN Server, \texttt{tcpdump} was executed on the router’s \texttt{eth0} interface while ICMP traffic was generated from Host U. As shown in Figure~\ref{fig:lab4}, ICMP echo request and echo reply packets were successfully captured. This confirms that packets from Host U traverse the VPN Server as expected on the simulated Internet network.
 
 
 
-\section{Task 3 – Send the IP Packet to VPN Server Through a Tunnel }
+
+
+\section{Task 2: Create and Configure TUN Interface}
+
+Task 2 is about understanding and demonstrating that we can create and configure TUN interface.
+
+
+\subsection{Task 2.a: Name of the Interface}
+
+We start by first entering the Host U container, found the tun.py python file and looked at the content in the file.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-51-38.png}
+\hfill
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-52-59.png}
+\hfill
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-53-23.png}
+\caption{Steps involved in modifying the tun.py file, executing the program, and verifying the creation of the TUN interface on Host U.}
+\label{fig:lab3}
+\end{figure}
+
+
+In conclusion tun.py program was executed on Host U to create a virtual TUN interface. by default the tun interface used the prefix tun, which we changed to abdullahi. After running the program, we opened a new terminal in the Host U container and a new interface named abdullahi appeared in the output of ip address command, which confirmed the tun interface was created. 
+
+\subsection{Task 2.b: Set up the TUN Interface}
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\linewidth]{Project/Part 3/Screenshot from 2026-02-02 10-06-40.png}
+\caption{After running the program and our new virtual network interface named abdulahi appeared. An IP address was then assigned to the new TUN interface. Lastly with ip addr show ``Name'' we were able to verify that the new TUN interface was successfully created.}
+\label{fig:lab4}
+\end{figure}
+
+\subsection{Task 2.c: Read from the TUN Interface}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 12-57-34.png}
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 12-43-31.png}
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 12-50-37.png}
+\caption{Updated the loop to read packets sent the kernel sends out. Then we executed the tun.py program and successfully read incoming packets from the TUN interface and displayed packet information, including source and destination IP addresses.}
+\label{fig:lab5}
+\end{figure}
+
+\subsection{Task 2.d: Write to the TUN Interface}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 13-29-04.png}
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 13-29-19.png}
+\includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 13-34-53.png}
+\caption{Changed the tun.py code so that it keeps reading packets from the TUN interface. When it receives an ICMP echo request, it creates an echo reply by swapping the source and destination IP addresses and then sends the reply back through the TUN interface so the ping command can receive it. However, the ping command did not receive any replies because the constructed packet did not form a fully valid ICMP echo reply.}
+\label{fig:lab6}
+\end{figure}
+
+
+\section{Task 3: Send the IP Packet to VPN Server Through a Tunnel}
+
+In this task, IP packets generated on Host U were captured through the TUN interface
+and forwarded to the VPN Server. This demonstrates the tunneling mechanism used by VPNs,
+where packets are encapsulated and sent through an intermediate gateway.
+
+
+\section{Task 4: Set Up the VPN Server}
+
+In this task, the VPN Server was configured to receive tunneled packets from Host U,
+decapsulate them, and forward them to the private network. IP forwarding was enabled
+to allow the VPN Server to function as a router.
+
+\section{Task 5: Handling Traffic in Both Directions}
+
+After configuring the VPN Server, traffic was successfully transmitted in both directions.
+Packets sent from Host U reached Host V, and response packets were routed back through the VPN tunnel.
+
+\section{Task 6: Tunnel-Breaking Experiment}
+
+In this task, the VPN tunnel was intentionally disrupted to observe the effect on packet delivery. Once the tunnel was broken, packets could no longer reach the private network, confirming that connectivity depends entirely on the VPN tunnel.
+
+
+\section{Task 7: Routing Experiment on Host V}
+Routing configurations on Host V were examined and modified to analyze how routing
+decisions affect packet delivery through the VPN tunnel.
+
+
+\section{Task 8: VPN Between Private Networks}
+
+In this task, a VPN tunnel was established between two private networks, allowing hosts
+from different private subnets to communicate securely through VPN gateways.
+
+\section{Task 9: Experiment with the TAP Interface}
+
+This task explored the use of the TAP interface, which operates at the data-link layer.
+Unlike the TUN interface, TAP allows Ethernet frames to be transmitted through the VPN.
 
 
 
-\section{Task 4 – Set Up the VPN Server }
-
-
-
-\section{Task 5 – Handling Traffic in Both Directions }
 
 
 
