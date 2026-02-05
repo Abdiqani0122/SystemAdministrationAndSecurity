@@ -585,7 +585,7 @@ Downloaded the Labsetup folder, put it in the shared folder and accessed it thro
 
 The following containers were created to represent the lab topology:
 \begin{itemize}
-\item \textbf{VPN Server (Router)}: \texttt{server-router}
+\item \textbf{Router (VPN Server)}: \texttt{server-router}
 \item \textbf{Host U (VPN Client)}: \texttt{client-10.9.0.5}
 \item \textbf{Host V (Private Network Host)}: \texttt{host-192.168.60.5}
 \end{itemize}
@@ -601,16 +601,16 @@ The following containers were created to represent the lab topology:
 
 \textbf{Host U Connectivity Tests}
 
-To verify external connectivity, ICMP ping tests were performed from Host U (\texttt{client-10.9.0.5}). As shown in Figure~\ref{fig:lab2}, Host U can successfully communicate with the VPN Server at IP address \texttt{10.9.0.11}. This confirms that connectivity on the simulated Internet network (\texttt{10.9.0.0/24}) is functioning correctly.
+To verify external connectivity, ICMP ping tests were performed from Host U (\texttt{client-10.9.0.5}), container id \texttt{4e5}. As shown in Figure~\ref{fig:lab2}, Host U can successfully communicate with the VPN Server at IP address \texttt{10.9.0.11}. This confirms that connectivity on the simulated Internet network (\texttt{10.9.0.0/24}) is functioning correctly.
 
-However, when Host U attempts to ping Host V (\texttt{192.168.60.5}), the packets are not delivered and result in 100% packet loss. This behavior is expected, since Host V is located inside the private network and is not directly accessible from Host U before a VPN tunnel is established.
+However, when Host U attempts to ping Host V (\texttt{192.168.60.5}), the packets are not delivered and result in 100\% packet loss. This behavior is expected, since Host V is located inside the private network and is not directly accessible from Host U before a VPN tunnel is established.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.48\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-30-28.png}
 \hfill
 \includegraphics[width=0.5\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-30-50.png}
-\caption{ICMP tests from Host U showing successful communication with the VPN Server and failed communication with Host V.}
+\caption{(a) ICMP connectivity tests from Host U to the VPN Server and Host V; (b) ICMP packet capture on the VPN Server using \texttt{tcpdump}.}
 \label{fig:lab2}
 \end{figure}
 
@@ -623,7 +623,7 @@ To verify internal network connectivity, ICMP ping tests were performed from the
 
 \textbf{Packet Capture on the VPN Server}
 
-To observe packet flow through the VPN Server, \texttt{tcpdump} was executed on the router’s \texttt{eth0} interface while ICMP traffic was generated from Host U. As shown in Figure~\ref{fig:lab4}, ICMP echo request and echo reply packets were successfully captured. This confirms that packets from Host U traverse the VPN Server as expected on the simulated Internet network.
+To observe packet flow through the VPN Server, \texttt{tcpdump} was executed on the router’s \texttt{eth0} interface while ICMP traffic was generated from Host U. As shown in Figure~\ref{fig:lab2}, ICMP echo request and echo reply packets were successfully captured. This confirms that packets from Host U pass through the VPN Server as expected on the simulated Internet network.
 
 
 
@@ -636,9 +636,9 @@ Task 2 is about understanding and demonstrating that we can create and configure
 
 \subsection{Task 2.a: Name of the Interface}
 
-We start by first entering the Host U container, found the tun.py python file and looked at the content in the file.
+We start by first entering the Host U container, found the tun.py program and executed it to create a virtual TUN interface, the program used a default tun interface name that we changed to our own, Specifically, the prefix in the struct.pack() call was changed from tun\%d to Abdullahi\%d. After making the program executable and running it with root privileges, the program printed the name of the newly created interface.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 08-51-38.png}
 \hfill
@@ -650,12 +650,13 @@ We start by first entering the Host U container, found the tun.py python file an
 \end{figure}
 
 
-In conclusion tun.py program was executed on Host U to create a virtual TUN interface. by default the tun interface used the prefix tun, which we changed to abdullahi. After running the program, we opened a new terminal in the Host U container and a new interface named abdullahi appeared in the output of ip address command, which confirmed the tun interface was created. 
+
 
 \subsection{Task 2.b: Set up the TUN Interface}
 
+After creating the TUN interface, it is not usable right away, since it does not have an ip address and is in the DOWN state. So to configure it an ip address was assigned and the interface abdullahi1 was in the UP state had been assinged the ip addr \texttt{192.168.53.1/24}. Now the TUN interface is active and ready to receive and send IP packets.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.5\linewidth]{Project/Part 3/Screenshot from 2026-02-02 10-06-40.png}
 \caption{After running the program and our new virtual network interface named abdulahi appeared. An IP address was then assigned to the new TUN interface. Lastly with ip addr show ``Name'' we were able to verify that the new TUN interface was successfully created.}
@@ -664,23 +665,34 @@ In conclusion tun.py program was executed on Host U to create a virtual TUN inte
 
 \subsection{Task 2.c: Read from the TUN Interface}
 
-\begin{figure}[h]
+In this task the TUN interface was modified to continously read packets from the TUN Interface and read them as IP packets using scapy. 
+
+When pinging a host the \texttt{192.168.53.0/24} network from Host U, the ping request failed, but tun.py program printed ICMP echo-request packets. The printed output showed the source IP address of the TUN interface and the destination IP address.
+
+hen pinging a host in the internal network \texttt{192.168.60.0/24}, the ping succeeded, but the TUN program did not print any packets. This is because traffic to the internal network was routed through physical interface (eth0)
+
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 12-57-34.png}
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 12-43-31.png}
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 12-50-37.png}
-\caption{Updated the loop to read packets sent the kernel sends out. Then we executed the tun.py program and successfully read incoming packets from the TUN interface and displayed packet information, including source and destination IP addresses.}
+\caption{UReading IP packets from the TUN interface on Host U. The \texttt{tun.py} program prints ICMP echo-request packets when traffic is routed to the TUN interface.}
 \label{fig:lab5}
 \end{figure}
 
 \subsection{Task 2.d: Write to the TUN Interface}
+
+The TUN interface was further modified to write packers to the TUN interface. After receiving a packet from the TUN interface, the program checks whether a packet is an ICMP echo request. IF it is, an ICMP echo reply is created by swapping he source and destination IP address and changing  the ICMP type echo reply.
+
+At first, the constructed ICMP reply was incomplete and as a result it failed. After correcting the packet construction, the ping command successfully received ICMP echo replies, as shown in Figure~\ref{fig:lab6}. In the second experiment, random data was written to the TUN interface, but it was dropped by the kernel and no response was seen.
+
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 13-29-04.png}
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 13-29-19.png}
 \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-02 13-34-53.png}
-\caption{Changed the tun.py code so that it keeps reading packets from the TUN interface. When it receives an ICMP echo request, it creates an echo reply by swapping the source and destination IP addresses and then sends the reply back through the TUN interface so the ping command can receive it. However, the ping command did not receive any replies because the constructed packet did not form a fully valid ICMP echo reply.}
+\caption{Writing ICMP echo reply packets to the TUN interface on Host U. After constructing a valid ICMP echo reply, the ping command successfully receives responses, demonstrating packet injection through the TUN interface.}
 \label{fig:lab6}
 \end{figure}
 
@@ -691,6 +703,17 @@ In this task, IP packets generated on Host U were captured through the TUN inter
 and forwarded to the VPN Server. This demonstrates the tunneling mechanism used by VPNs,
 where packets are encapsulated and sent through an intermediate gateway.
 
+First we created a TUN interface on Host U (client server) by renaming and changing the code of tun.py to tun\_client.py. Then we went into the server-router and created the tun\_server.py program that listens on port 9090, extracts the UDP payload and interprets it as an ip packet using Scapy.
+
+When pinging and IP in the \texttt{192.168.53.0/24} newtwork, the ICMP packet was routed to the TUN interface on Host U. The tun\_client.py program wrapped the packet in UDP and sent it the VPN server, which received it and printed the IP. At first the ping did not go through, but after adding a routing to send the traffic to the TUN interface, the ICMP packet was tunneled.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Project/Part 3/Screenshot from 2026-02-03 06-44-25.png}
+    \includegraphics[width=0.7\textwidth]{Project/Part 3/Skjermbilde 2026-02-05 kl. 13.55.14.png}
+    \caption{When pinging the IP address 192.168.53.100, the ICMP packet is routed into the TUN interface on Host U. The tun\_client.py program reads this packet and sends it inside a UDP packet to the VPN Server. The VPN Server receives the UDP packet and extracts the encapsulated IP packet. This is confirmed by the server output showing Inside: 192.168.53.99 → 192.168.53.100, which proves that the ICMP packet was successfully tunneled through the UDP connection.}
+    \label{fig:lab7}
+\end{figure}
 
 \section{Task 4: Set Up the VPN Server}
 
@@ -698,19 +721,67 @@ In this task, the VPN Server was configured to receive tunneled packets from Hos
 decapsulate them, and forward them to the private network. IP forwarding was enabled
 to allow the VPN Server to function as a router.
 
+We reused the TUN interface from earlier task and added it to the tun\_server.py. After creating the TUN interface configuring with an ip address which allows the kernel to recognize the TUN interface as a valid routing endpoint for packets arriving through the VPN tunnel.
+
+To verify the implementation, an ICMP echo request was sent from Host U to Host V (192.168.60.5). Even though the pin reply did not return, captured traffic on Host V was confirmed using tcpdump.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{Project/Part 3/Screenshot from 2026-02-03 07-31-19.png}
+    \includegraphics[width=0.3\textwidth]{Project/Part 3/Screenshot from 2026-02-03 07-32-04.png}
+    \caption{The captured packets show ICMP echo requests arriving at Host V, proving that the packets originate from Host U and arrive through the VPN tunnel, which demonstrates decapsulation and forwarding by the VPN Server}
+    \label{fig:lab8}
+\end{figure}
+
 \section{Task 5: Handling Traffic in Both Directions}
 
-After configuring the VPN Server, traffic was successfully transmitted in both directions.
-Packets sent from Host U reached Host V, and response packets were routed back through the VPN tunnel.
+In this task we configuring the VPN Server, making sure traffic was successfully transmitted in both directions. Packets sent from Host U reached Host V, and response packets were routed back through the VPN tunnel.
+
+To enable this we started by modyfing both the tun\_client and tun\_server by replacing the while loop and forwarding packets in both direction.
+
+The client server sends generated packets to the server via UDP socket and receives reply packets from the server, which it writes to the TUN interface so the kernel can deliver it to Host U.
+
+The server receives packets from the client through the UDP socket, which are written to servers TUN interface. The kernel forwards it to Host V. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Project/Part 3/Screenshot from 2026-02-03 08-22-41.png}
+    \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-03 08-23-23.png}
+    \includegraphics[width=0.32\textwidth]{Project/Part 3/Screenshot from 2026-02-03 08-24-05.png}
+    \caption{The server receives packets from the client via the UDP socket, forwards them to Host V through the TUN interface, receives reply packets from Host V via the TUN interface, and sends them back to the client through the UDP socket.}
+    \label{fig:lab9}
+\end{figure}
 
 \section{Task 6: Tunnel-Breaking Experiment}
 
-In this task, the VPN tunnel was intentionally disrupted to observe the effect on packet delivery. Once the tunnel was broken, packets could no longer reach the private network, confirming that connectivity depends entirely on the VPN tunnel.
+In this task, the VPN tunnel was intentionally disrupted to observe on the active TCP connection. A telnet session was first established from Host U to Host V through th VPN tunnel and while keeping the session open, the VPN tunnel was broken by stopping the tun\_client.py program.
+
+When the VPN tunnel is broken, packets between Host U and Host V cannot be delivered. The TCP connection used by telnet is not closed immediately because TCP assumes packets are lost and keeps retrying. During this time, user input is accepted but no response is received. After several retries the TCP times out and the connection is closed.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 3/Skjermbilde 2026-02-04 kl. 16.42.31.png}
+    \caption{When the VPN tunnel is interrupted, TCP packets are dropped and no responses are received, but the connection is not immediately closed. TCP retransmissions continue until the tunnel is restored or a timeout occurs.}
+    \label{fig:lab10}
+\end{figure}
+
 
 
 \section{Task 7: Routing Experiment on Host V}
+
 Routing configurations on Host V were examined and modified to analyze how routing
 decisions affect packet delivery through the VPN tunnel.
+
+Initially, Host V used a default route to forward all non-local traffic to the VPN server. After removing the default route, Host V could no longer send return packets back to Host U, causing communication failure.
+
+Adding a specific route for the VPN subnet via the VPN server ensures that return traffic is routed correctly. This experiment shows that proper routing configuration on internal hosts is essential in real VPN deployments.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 3/Skjermbilde 2026-02-04 kl. 16.50.37.png}
+    \caption{Removing the default route prevents return traffic from reaching the VPN server. Adding a specific route for the VPN client subnet restores correct return-path routing.}
+    \label{fig:lab11}
+\end{figure}
 
 
 \section{Task 8: VPN Between Private Networks}
@@ -718,18 +789,182 @@ decisions affect packet delivery through the VPN tunnel.
 In this task, a VPN tunnel was established between two private networks, allowing hosts
 from different private subnets to communicate securely through VPN gateways.
 
+VPN was established between two private networks, \texttt{192.168.50.0/24} and \texttt{192.168.60.0/24}, using two VPN routers connected via the Internet network \texttt{10.9.0.0/24}. Routing rules were configured so that traffic destined for the remote private network was forwarded into the VPN tunnel.
+Connectivity was verified using ping between Host U and Host V. Packet captures using tcpdump showed that private-network traffic was encapsulated inside UDP packets and transmitted through the VPN tunnel, confirming that communication between the two private networks went through the VPN.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 3/Screenshot from 2026-02-03 11-49-06.png}
+    \caption{ICMP traffic between Host U and Host V is encapsulated in UDP packets and transmitted through the VPN tunnel over the Internet network \texttt{10.9.0.0/24}, verified by tcpdump}
+    \label{fig:lab12}
+\end{figure}
+
 \section{Task 9: Experiment with the TAP Interface}
 
 This task explored the use of the TAP interface, which operates at the data-link layer.
 Unlike the TUN interface, TAP allows Ethernet frames to be transmitted through the VPN.
 
+a TAP interface was created and configured in the \texttt{192.168.53.0/24} network. ARP requests generated during a ping operation were captured, showing that TAP interfaces can observe Ethernet and ARP traffic.
+
+The program was then extended to send spoofed ARP replies. Using arping, replies were received for both valid and non-existent IP addresses, confirming that the ARP responses were generated by the TAP program. This demonstrates that TAP interfaces allow user-space programs to capture and inject Ethernet-level packets.
+
+\begin{figure}{H}
+    \centering
+    \includegraphics[width=0.7\textwidth]{Project/Part 3/Screenshot from 2026-02-04 05-49-11.png}
+    \includegraphics[width=0.7\textwidth]{Project/Part 3/Screenshot from 2026-02-04 05-49-37.png}
+    \includegraphics[width=0.7\textwidth]{Project/Part 3/Screenshot from 2026-02-04 06-01-24.png}
+    \caption{ARP requests captured by the TAP interface when pinging an IP address in the same subnet. The TAP program generates spoofed ARP replies with a fake MAC address. Arping successfully receives ARP replies for both a valid IP and a non-existent IP address.}
+    \label{fig:lab13}
+\end{figure}
 
 
 
+\clearpage
+\setcounter{part}{3}
+\part{- Environment Variable and Set-UID Program Lab}
+\setcounter{section}{0}
+
+\section{Overview}
+
+In this lab, we explore how environment variables affect how programs run in Linux. We experiment with setting, changing, and observing environment variables to see how they are passed from one program to another. We also observe how these variables can change the behavior of programs without modifying their source code.
+
+We focus on Set-UID programs, which run with higher privileges, and observe how environment variables can create security risks if they are not handled correctly. By running small programs and test commands, we see how improper use of environment variables can lead to privilege and capability leaks.
+
+Overall, this lab helps us understand how environment variables work behind the scenes and why they must be handled carefully in security-sensitive programs.
+
+\section{Task 1: Manipulating Environment Variables}
+
+In this task, we learn how to view, set, and remove environment variables using basic Bash commands. We use commands like printenv, export, and unset to understand how environment variables work inside a shell.
+
+We printed all the environment variables, printed a specific variable, created a new environment variable, verified the variable and then lastly removed the variable.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 06-27-48.png}
+    \caption{The printenv command is used to display environment variables, export is used to create a new variable (MYVAR), and unset removes it from the environment. The output confirms that environment variables can be dynamically added and removed within a shell session.}
+    \label{fig:tap1}
+\end{figure}
+
+\section{Task 2: Passing Environment Variables from Parent Process to Child Process}
+
+In this task, we study whether environment variables are inherited when a new process is created using fork(). By running a program in both the parent and child process, we observe how environment variables are shared between them.
+
+We compared the environment variables printed by the parent and child processes. The diff command showed no difference between the two outputs, which means that the child process inherited all environment variables from the parent process when fork() was called.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.32\textwidth]{Project/Part 4/Screenshot from 2026-02-04 06-59-03.png}
+    \includegraphics[width=0.32\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-01-54.png}
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-03-48.png}
+    \caption{Demonstration of environment variable inheritance between parent and child processes using fork()}
+    \label{fig:tap2}
+\end{figure}
+
+
+\section{Task 3: Environment Variables and execve()}
+
+This task explores what happens to environment variables when a program uses execve() to run another program. We test whether environment variables are kept or lost depending on how execve() is called.
+
+We observed that a program executed using execve() does not automatically inherit environment variables. When NULL is passed as the environment parameter, the new program runs with an empty environment. When environ is passed, the new program receives all environment variables from the calling process.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-09-49.png}
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-10-32.png}
+    \caption{Demonstration of environment variable inheritance when executing a new program using execve() with the environ argument}
+    \label{fig:tap3}
+\end{figure}
+
+\section{Task 4: Environment Variables and system()}
+
+In this task, we examine how the system() function executes commands through a shell. We observe that environment variables from the calling program are passed to the shell and can affect the executed command.
+
+We wrote a small C program that uses system("/usr/bin/env") to print environment variables. When we ran the program, it printed the same variables as the shell, such as USER, HOME, and PATH. This is because system() runs the command through /bin/sh, which inherits the environment variables from the program.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-16-30.png}
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-18-16.png}
+    \caption{Output of /usr/bin/env executed via system(), demonstrating that environment variables are preserved.}
+    \label{fig:tap4}
+\end{figure}
+
+\section{Task 5: Environment Variable and Set-UID Programs}
+
+This task focuses on Set-UID programs and checks which environment variables are passed to them when they are executed by a normal user. We observe that some environment variables are removed for security reasons.
+
+We wrote a program that prints all environment variables, compiled it, changed its ownership to root, and set the Set-UID permission bit. We then defined several environment variables in the user’s shell, including PATH, LD\_LIBRARY\_PATH, and a user-defined variable (MYVAR). After executing the Set-UID program, we observed that some environment variables, such as the user-defined variable, were inherited by the program. However, security-sensitive variables like LD\_LIBRARY\_PATH were not present in the output.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-40-39.png}
+    \includegraphics[width=0.7\textwidth]{Project/Part 4/Screenshot from 2026-02-04 07-47-35.png}
+    \caption{Creation and execution of a root-owned Set-UID program that prints environment variables, showing that some user-defined variables like MYVAR are inherited, while sensitive variables (such as LD\_LIBRARY\_PATH) are filtered for security.}
+    \label{fig:tap5}
+\end{figure}
 
 
 
+\section{Task 6: The PATH Environment Variable and Set-UID Programs}
 
+In this task, we study how modifying the PATH environment variable can be dangerous in Set-UID programs that use system(). We attempt to trick a privileged program into running malicious code instead of the intended command.
+
+We compiled a Set-UID program owned by root that executes system("ls"), where the command is specified using a relative path instead of an absolute path. We then created a malicious executable named ls in the current directory and modified the PATH environment variable so that the current directory appears before the standard system directories. When we executed the Set-UID program, we observed that our malicious ls program was executed instead of /bin/ls. However, when the malicious ls was executed, the output of the id command showed that it was running with the user’s privileges rather than root privileges.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 11-18-47.png}
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 11-27-44.png}
+    \caption{Although the malicious ls is executed, the output of id shows that it runs with the user’s privilege instead of root. This is because the shell invoked by system() drops Set-UID privileges, preventing privilege escalation.}
+    \label{fig:tap6}
+\end{figure}
+
+
+\section{Task 7: The LD PRELOAD Environment Variable and Set-UID Programs}
+
+This task examines how LD\_PRELOAD affects program execution. We observe that while LD\_PRELOAD works for normal programs, it is usually ignored for Set-UID root programs as a security protection.
+
+We used LD\_PRELOAD to override the sleep() function. For a normal program, the overridden function was executed. When the program was made Set-UID root and executed by a normal user, LD\_PRELOAD was ignored. When the same program was executed by root, LD\_PRELOAD was executed successfully. Finally, when the program changed ownership to user1, made it Set-UID program and executed by another user, LD\_PRELOAD was again ignored. These results show that the dynamic loader sanitizes LD\_* environment variables when the effective UID differs from the real UID, in order to prevent privilege escalation.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 11-49-16.png}
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 11-49-39.png}
+    \caption{Behavior of LD\_PRELOAD under different execution conditions. The overridden sleep() function is executed for normal programs and for Set-UID programs run by their owner, but LD\_PRELOAD is ignored when a Set-UID program is executed by an unprivileged user. This shows that the dynamic loader removes LD\_PRELOAD when the effective UID differs from the real UID to prevent privilege escalation.}
+    \label{fig:tap7}
+\end{figure}
+
+
+\section{Task 8: Invoking External Programs Using system() versus execve()}
+
+In this task, we compare system() and execve() when used in Set-UID programs. We show that system() is more dangerous because it invokes a shell, while execve() is safer and prevents certain attacks.
+
+When the program used system(), we were able to inject extra commands by including shell metacharacters in the input. For example, the input "/etc/passwd; rm /tmp/testfile" caused the program to both display /etc/passwd and delete /tmp/testfile. This happens because system() invokes a shell to interpret the command string, making it vulnerable to command injection.
+
+After replacing system() with execve(), the same input was treated as a normal filename instead of a command. No extra commands were executed, and /tmp/testfile was not deleted, showing that execve() is not vulnerable to this type of injection.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.32\textwidth]{Project/Part 4/Screenshot from 2026-02-04 12-19-01.png}
+    \includegraphics[width=0.7\textwidth]{Project/Part 4/Screenshot from 2026-02-04 12-18-35.png}
+    \includegraphics[width=0.32\textwidth]{Project/Part 4/Screenshot from 2026-02-04 12-05-00.png}
+    \includegraphics[width=0.32\textwidth]{Project/Part 4/Screenshot from 2026-02-04 12-03-49.png}
+    \caption{Command injection attack against a root-owned Set-UID program using system(). The injected command successfully deletes /tmp/testfile. When execve() is used instead, the injected input is treated as a filename and the attack fails, demonstrating that execve() prevents shell-based command injection.}
+    \label{fig:tap8}
+\end{figure}
+
+\section{Task 9: Capability Leaking}
+
+In the final task, we study capability leaking, where a Set-UID program drops privileges incorrectly. We exploit this mistake to gain unauthorized access to a file, showing why privileges must be carefully cleaned up.
+
+We compiled a root‑owned Set‑UID program that opens /etc/zzz as root and then drops its privileges using setuid(getuid()). Although the program drops all user IDs, it does not close the file descriptor opened as root. When the program later executes /bin/sh, the shell inherits this open file descriptor. As a result, the shell—despite running with normal user privileges—can still write to /etc/zzz. This shows that failing to close privileged file descriptors can leave a program effectively privileged even after dropping its UID.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Project/Part 4/Screenshot from 2026-02-04 12-26-42.png}
+    \caption{Exploitation of a capability leaking vulnerability in a root-owned Set-UID program. The program opens /etc/zzz with root privileges, drops its UID using setuid(), but leaks the open file descriptor to a spawned shell. As a result, a normal user can write to the root-owned file via the inherited file descriptor.}
+    \label{fig:tap9}
+\end{figure}
 
 
 
